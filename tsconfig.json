@@ -1,0 +1,16 @@
+{
+    "compilerOptions": {
+        "outDir": "distributable",
+        "target": "ES6",
+        "module": "ESNext",
+        "moduleResolution": "Node",
+        "forceConsistentCasingInFileNames": true,
+        "skipLibCheck": true,
+        "declaration": true,
+        "sourceMap": true,
+        "strict": true
+    },
+    "include": [
+        "source"
+    ]
+}
