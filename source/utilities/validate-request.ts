@@ -1,7 +1,7 @@
 import { CallSecurityOptions, } from "../interfaces/call-security-options";
 import { Request, } from "express";
 import { RequestValidationOutput, } from "../interfaces/request-validation-output";
-import Session from "../database/models/session";
+import Session from "../database-models/session";
 import { applicationKey, } from "../constants/application-key";
 import decodeSessionToken from "./decode-session-token";
 import { rateLimiter, } from "../constants/rate-limiter";

@@ -1,4 +1,4 @@
-import { SessionOutput, } from "../database/models/session";
+import { SessionOutput, } from "../database-models/session";
 
 export interface GetActiveSessionsOutput {
     activeSessions: SessionOutput[];

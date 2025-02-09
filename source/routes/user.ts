@@ -1,14 +1,14 @@
 import { Request, Response, Router, } from "express";
-import User, { UserInput, } from "../database/models/user";
-import Preferences from "../database/models/preferences";
+import User, { UserInput, } from "../database-models/user";
+import Preferences from "../database-models/preferences";
 import { RequestValidationOutput, } from "../interfaces/request-validation-output";
 import runRequest from "../utilities/run-request";
 import { smallFileBytes, } from "../constants/file-sizes";
 import throwError from "../utilities/throw-error";
 
-const userController = Router();
+const userRoute = Router();
 
-userController.get(`/`, async (request: Request, response: Response) => {
+userRoute.get(`/`, async (request: Request, response: Response) => {
     await runRequest(
         {
             request,
@@ -34,7 +34,7 @@ userController.get(`/`, async (request: Request, response: Response) => {
     );
 });
 
-userController.put(`/`, async (request: Request, response: Response) => {
+userRoute.put(`/`, async (request: Request, response: Response) => {
     await runRequest(
         {
             request,
@@ -65,4 +65,4 @@ userController.put(`/`, async (request: Request, response: Response) => {
     );
 });
 
-export default userController;
+export default userRoute;

@@ -1,10 +1,10 @@
-import DashboardConfiguration, { DashboardConfigurationInput, } from "../database/models/dashboard-configuration";
+import DashboardConfiguration, { DashboardConfigurationInput, } from "../database-models/dashboard-configuration";
 import { Request, Response, Router, } from "express";
 import { RequestValidationOutput, } from "../interfaces/request-validation-output";
 import runRequest from "../utilities/run-request";
 import throwError from "../utilities/throw-error";
 
-const dashboardConfigurationController = Router();
+const dashboardConfigurationRoute = Router();
 
 const getDashboard = async (userId?: number, dashboard?: string) => {
     if (!userId) {
@@ -19,7 +19,7 @@ const getDashboard = async (userId?: number, dashboard?: string) => {
     },});
 };
 
-dashboardConfigurationController.get(`/`, async (request: Request, response: Response) => {
+dashboardConfigurationRoute.get(`/`, async (request: Request, response: Response) => {
     await runRequest(
         {
             request,
@@ -38,7 +38,7 @@ dashboardConfigurationController.get(`/`, async (request: Request, response: Res
     );
 });
 
-dashboardConfigurationController.put(`/`, async (request: Request, response: Response) => {
+dashboardConfigurationRoute.put(`/`, async (request: Request, response: Response) => {
     await runRequest(
         {
             request,
@@ -62,4 +62,4 @@ dashboardConfigurationController.put(`/`, async (request: Request, response: Res
     );
 });
 
-export default dashboardConfigurationController;
+export default dashboardConfigurationRoute;

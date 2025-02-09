@@ -7,6 +7,23 @@
 npm install wick-apps-backend
 ```
 
+### Start Application
+At the root of your application, call the `startApplication` method.
+```typescript
+import { Sequelize, } from 'sequelize';
+import { databaseUrl, applicationPort } from './secrets';
+import { startApplication } from 'wick-apps-backend';
+
+const sequelize = new Sequelize(databaseUrl, {
+    define: {
+        freezeTableName: true,
+    },
+    logging: false,
+});
+
+startApplication(sequelize, applicationPort, []);
+```
+
 ## Development Documentation
 
 ### Release New Version

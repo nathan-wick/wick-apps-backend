@@ -1,6 +1,6 @@
-import { verify } from 'jsonwebtoken';
 import { SessionToken, } from '../interfaces/session-token';
 import throwError from './throw-error';
+import { verify, } from 'jsonwebtoken';
 
 const decodeSessionToken = (codedToken: string, key: string): SessionToken => {
     let decodedToken: SessionToken = {sessionId: 0, };

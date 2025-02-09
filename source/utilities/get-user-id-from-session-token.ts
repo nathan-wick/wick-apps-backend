@@ -1,5 +1,5 @@
 import { Request, } from "express";
-import Session from "../database/models/session";
+import Session from "../database-models/session";
 import { applicationKey, } from "../constants/application-key";
 import decodeSessionToken from "./decode-session-token";
 

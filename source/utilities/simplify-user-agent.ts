@@ -1,4 +1,4 @@
-import { parse } from "useragent";
+import { parse, } from "useragent";
 
 const simplifyUserAgent = (userAgent?: string) => {
     const unknownUserAgent = `Unknown`;

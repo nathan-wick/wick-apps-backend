@@ -1,10 +1,10 @@
 import { Request, Response, Router, } from "express";
-import Session, { SessionOutput, } from "../database/models/session";
+import Session, { SessionOutput, } from "../database-models/session";
 import { Op, } from "sequelize";
 import { RequestValidationOutput, } from "../interfaces/request-validation-output";
 import { SendVerificationEmailInput, } from "../interfaces/send-verification-email-input";
 import { SignInInput, } from "../interfaces/sign-in-input";
-import User from "../database/models/user";
+import User from "../database-models/user";
 import { applicationKey, } from "../constants/application-key";
 import decodeSessionToken from "../utilities/decode-session-token";
 import generateRandomCode from "../utilities/generate-random-code";
@@ -17,7 +17,7 @@ import simplifyUserAgent from "../utilities/simplify-user-agent";
 import throwError from "../utilities/throw-error";
 import validateEmail from "../utilities/validate-email";
 
-const authenticationController = Router();
+const authenticationRoute = Router();
 
 const expireExcessSessions = async (userId: number) => {
     const now = new Date();
@@ -46,7 +46,7 @@ const expireExcessSessions = async (userId: number) => {
     }
 };
 
-authenticationController.post(`/send-verification-email`, async (request: Request, response: Response) => {
+authenticationRoute.post(`/send-verification-email`, async (request: Request, response: Response) => {
     await runRequest(
         {
             request,
@@ -85,7 +85,7 @@ authenticationController.post(`/send-verification-email`, async (request: Reques
     );
 });
 
-authenticationController.post(`/sign-in`, async (request: Request, response: Response) => {
+authenticationRoute.post(`/sign-in`, async (request: Request, response: Response) => {
     await runRequest(
         {
             request,
@@ -130,7 +130,7 @@ authenticationController.post(`/sign-in`, async (request: Request, response: Res
     );
 });
 
-authenticationController.post(`/sign-out`, async (request: Request, response: Response) => {
+authenticationRoute.post(`/sign-out`, async (request: Request, response: Response) => {
     await runRequest(
         {
             request,
@@ -151,7 +151,7 @@ authenticationController.post(`/sign-out`, async (request: Request, response: Re
     );
 });
 
-authenticationController.get(`/active-sessions`, async (request: Request, response: Response) => {
+authenticationRoute.get(`/active-sessions`, async (request: Request, response: Response) => {
     await runRequest(
         {
             request,
@@ -181,4 +181,4 @@ authenticationController.get(`/active-sessions`, async (request: Request, respon
     );
 });
 
-export default authenticationController;
+export default authenticationRoute;

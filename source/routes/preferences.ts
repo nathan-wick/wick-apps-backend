@@ -1,12 +1,12 @@
-import Preferences, { PreferencesInput, } from "../database/models/preferences";
+import Preferences, { PreferencesInput, } from "../database-models/preferences";
 import { Request, Response, Router, } from "express";
 import { RequestValidationOutput, } from "../interfaces/request-validation-output";
 import runRequest from "../utilities/run-request";
 import throwError from "../utilities/throw-error";
 
-const preferencesController = Router();
+const preferencesRoute = Router();
 
-preferencesController.put(`/`, async (request: Request, response: Response) => {
+preferencesRoute.put(`/`, async (request: Request, response: Response) => {
     await runRequest(
         {
             request,
@@ -29,4 +29,4 @@ preferencesController.put(`/`, async (request: Request, response: Response) => {
     );
 });
 
-export default preferencesController;
+export default preferencesRoute;
