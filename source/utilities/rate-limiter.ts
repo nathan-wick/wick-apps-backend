@@ -1,87 +1,99 @@
 export default class RateLimiter {
-    private static millisecondsPerMinute = 60000;
-    
-    private maxRequestsPerHour = 1000;
-    private maxRequestsPerMinute = 50;
-    private blockDurationInMinutes = 15;
+	private static millisecondsPerMinute = 60000;
 
-    private requestTracker: Map<string, number[]> = new Map();
-    private blockedKeys: Map<string, number> = new Map();
+	private maxRequestsPerHour = 1000;
+	private maxRequestsPerMinute = 50;
+	private blockDurationInMinutes = 15;
 
-    private static filterOldRequests(requests: number[], currentTime: number, windowInMinutes: number): number[] {
-        return requests.filter(timestamp =>
-            currentTime - timestamp < (windowInMinutes * RateLimiter.millisecondsPerMinute));
-    }
+	private requestTracker: Map<string, number[]> = new Map();
+	private blockedKeys: Map<string, number> = new Map();
 
-    checkIfKeyIsBlocked(key: string): boolean {
-        const currentTime = Date.now();
-        const keyIsBlocked = this.blockedKeys.get(key);
+	private static filterOldRequests(
+		requests: number[],
+		currentTime: number,
+		windowInMinutes: number,
+	): number[] {
+		return requests.filter(
+			(timestamp) =>
+				currentTime - timestamp <
+				windowInMinutes * RateLimiter.millisecondsPerMinute,
+		);
+	}
 
-        if (keyIsBlocked) {
-            const blockHasExpired = currentTime > keyIsBlocked;
+	checkIfKeyIsBlocked(key: string): boolean {
+		const currentTime = Date.now();
+		const keyIsBlocked = this.blockedKeys.get(key);
 
-            if (!blockHasExpired) {
-                return true;
-            }
-        }
+		if (keyIsBlocked) {
+			const blockHasExpired = currentTime > keyIsBlocked;
 
-        const allRequests = this.requestTracker.get(key) || [];
-        const requestsThisHour = RateLimiter.filterOldRequests(
-            allRequests, 
-            currentTime, 
-            60
-        );
-        const requestsThisMinute = RateLimiter.filterOldRequests(
-            requestsThisHour, 
-            currentTime, 
-            1
-        );
+			if (!blockHasExpired) {
+				return true;
+			}
+		}
 
-        if (
-            requestsThisMinute.length > this.maxRequestsPerMinute || 
-            requestsThisHour.length > this.maxRequestsPerHour
-        ) {
-            this.blockedKeys.set(key, currentTime + (this.blockDurationInMinutes * RateLimiter.millisecondsPerMinute));
+		const allRequests = this.requestTracker.get(key) || [];
+		const requestsThisHour = RateLimiter.filterOldRequests(
+			allRequests,
+			currentTime,
+			60,
+		);
+		const requestsThisMinute = RateLimiter.filterOldRequests(
+			requestsThisHour,
+			currentTime,
+			1,
+		);
 
-            return true;
-        }
+		if (
+			requestsThisMinute.length > this.maxRequestsPerMinute ||
+			requestsThisHour.length > this.maxRequestsPerHour
+		) {
+			this.blockedKeys.set(
+				key,
+				currentTime +
+					this.blockDurationInMinutes *
+						RateLimiter.millisecondsPerMinute,
+			);
 
-        requestsThisHour.push(currentTime);
-        this.requestTracker.set(key, requestsThisHour);
+			return true;
+		}
 
-        return false;
-    }
+		requestsThisHour.push(currentTime);
+		this.requestTracker.set(key, requestsThisHour);
 
-    startCleanupInterval(intervalInMinutes: number = 5): NodeJS.Timeout {
-        const cleanupRequestTracker = (currentTime: number) => {
-            for (const [key, requests,] of this.requestTracker.entries()) {
-                const requestsThisHour = RateLimiter.filterOldRequests(
-                    requests,
-                    currentTime,
-                    60
-                );
+		return false;
+	}
 
-                if (requestsThisHour.length === 0) {
-                    this.requestTracker.delete(key);
-                } else {
-                    this.requestTracker.set(key, requestsThisHour);
-                }
-            }
-        };
-        
-        const cleanupBlockedKeys = (currentTime: number) => {
-            for (const [key, expiry,] of this.blockedKeys.entries()) {
-                if (currentTime >= expiry) {
-                    this.blockedKeys.delete(key);
-                }
-            }
-        };
+	startCleanupInterval(intervalInMinutes: number = 5): NodeJS.Timeout {
+		const cleanupRequestTracker = (currentTime: number) => {
+			for (const [key, requests] of this.requestTracker.entries()) {
+				const requestsThisHour = RateLimiter.filterOldRequests(
+					requests,
+					currentTime,
+					60,
+				);
 
-        return setInterval(() => {
-            const currentTime = Date.now();
+				if (requestsThisHour.length === 0) {
+					this.requestTracker.delete(key);
+				} else {
+					this.requestTracker.set(key, requestsThisHour);
+				}
+			}
+		};
 
-            cleanupRequestTracker(currentTime);
-            cleanupBlockedKeys(currentTime);
-        }, intervalInMinutes * RateLimiter.millisecondsPerMinute);
-    }
+		const cleanupBlockedKeys = (currentTime: number) => {
+			for (const [key, expiry] of this.blockedKeys.entries()) {
+				if (currentTime >= expiry) {
+					this.blockedKeys.delete(key);
+				}
+			}
+		};
+
+		return setInterval(() => {
+			const currentTime = Date.now();
+
+			cleanupRequestTracker(currentTime);
+			cleanupBlockedKeys(currentTime);
+		}, intervalInMinutes * RateLimiter.millisecondsPerMinute);
+	}
 }

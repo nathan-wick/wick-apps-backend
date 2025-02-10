@@ -1,42 +1,30 @@
 {
-    "parser": "@typescript-eslint/parser",
-    "extends": [
-        "eslint:all",
-        "plugin:@typescript-eslint/recommended"
-    ],
-    "plugins": ["@typescript-eslint"],
-    "rules": {
-        "comma-dangle": ["error", "always"],
-        "max-len": ["error", {
-            "code": 120
-        }],
-        "max-params": [
-            "warn",
-            4
-        ],
-        "max-statements": "off",
-        "new-cap": "off",
-        "no-console": "warn",
-        "no-magic-numbers": "off",
-        "no-plusplus": "off",
-        "no-warning-comments": "off",
-        "object-property-newline": "error",
-        "one-var": [
-            "error",
-            "never"
-        ],
-        "quotes": [
-            "error",
-            "backtick"
-        ],
-        "semi": [
-            "error",
-            "always"
-        ],
-        "sort-keys": "warn",
-        "no-ternary": "off",
-        "no-throw-literal": "off",
-        "init-declarations": "off",
-        "no-unused-expressions": "off"
-    }
+	"parser": "@typescript-eslint/parser",
+	"extends": ["eslint:all", "plugin:@typescript-eslint/recommended"],
+	"plugins": ["@typescript-eslint"],
+	"rules": {
+		"comma-dangle": "off",
+		"max-len": [
+			"error",
+			{
+				"code": 120
+			}
+		],
+		"max-params": ["warn", 4],
+		"max-statements": "off",
+		"new-cap": "off",
+		"no-console": "warn",
+		"no-magic-numbers": "off",
+		"no-plusplus": "off",
+		"no-warning-comments": "off",
+		"object-property-newline": "error",
+		"one-var": ["error", "never"],
+		"quotes": ["error", "backtick"],
+		"semi": ["error", "always"],
+		"sort-keys": "warn",
+		"no-ternary": "off",
+		"no-throw-literal": "off",
+		"init-declarations": "off",
+		"no-unused-expressions": "off"
+	}
 }

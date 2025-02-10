@@ -1,4 +1,4 @@
 export interface SignInInput {
-    sessionId: number;
-    code: string;
+	sessionId: number;
+	code: string;
 }

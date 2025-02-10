@@ -1,3 +1,3 @@
 export interface SignInOutput {
-    sessionToken: string;
+	sessionToken: string;
 }

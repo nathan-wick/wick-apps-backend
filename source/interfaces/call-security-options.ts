@@ -1,3 +1,3 @@
 export interface CallSecurityOptions {
-    sessionTokenIsRequired: boolean;
+	sessionTokenIsRequired: boolean;
 }

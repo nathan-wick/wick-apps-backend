@@ -1,3 +1,3 @@
 export interface RequestValidationOutput {
-    userId?: number;
+	userId?: number;
 }

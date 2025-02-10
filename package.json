@@ -1,41 +1,51 @@
 {
-  "name": "wick-apps-backend",
-  "version": "0.1.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "lint": "eslint . --ext .ts",
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nathan-wick/wick-apps-backend.git"
-  },
-  "author": "Nathan Wick",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/nathan-wick/wick-apps-backend/issues"
-  },
-  "homepage": "https://github.com/nathan-wick/wick-apps-backend#readme",
-  "devDependencies": {
-    "@types/bcrypt": "^5.0.2",
-    "@types/cors": "^2.8.17",
-    "@types/express": "^5.0.0",
-    "@types/geoip-lite": "^1.4.4",
-    "@types/jsonwebtoken": "^9.0.8",
-    "@types/useragent": "^2.3.4",
-    "@typescript-eslint/eslint-plugin": "^7.11.0",
-    "@typescript-eslint/parser": "^7.11.0",
-    "eslint": "^8.57.0",
-    "typescript": "^5.7.3"
-  },
-  "dependencies": {
-    "bcrypt": "^5.1.1",
-    "cors": "^2.8.5",
-    "express": "^4.21.2",
-    "geoip-lite": "^1.4.10",
-    "jsonwebtoken": "^9.0.2",
-    "sequelize": "^6.37.5",
-    "useragent": "^2.3.0"
-  }
+	"name": "wick-apps-backend",
+	"version": "0.1.0",
+	"description": "",
+	"main": "distributable/index.js",
+	"exports": {
+		"./package.json": "./package.json",
+		".": {
+			"import": "./distributable/index.js"
+		}
+	},
+	"scripts": {
+		"lint": "eslint . --ext .ts",
+		"format": "prettier --write .",
+		"build": "tsc",
+		"test": "echo \"Error: no test specified\" && exit 1",
+		"release": "npm run format && npm run build && npm run test"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/nathan-wick/wick-apps-backend.git"
+	},
+	"author": "Nathan Wick",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/nathan-wick/wick-apps-backend/issues"
+	},
+	"homepage": "https://github.com/nathan-wick/wick-apps-backend#readme",
+	"devDependencies": {
+		"@types/bcrypt": "^5.0.2",
+		"@types/cors": "^2.8.17",
+		"@types/express": "^5.0.0",
+		"@types/geoip-lite": "^1.4.4",
+		"@types/jsonwebtoken": "^9.0.8",
+		"@types/useragent": "^2.3.4",
+		"@typescript-eslint/eslint-plugin": "^7.11.0",
+		"@typescript-eslint/parser": "^7.11.0",
+		"eslint": "^8.57.0",
+		"prettier": "^3.5.0",
+		"typescript": "^5.7.3"
+	},
+	"dependencies": {
+		"bcrypt": "^5.1.1",
+		"cors": "^2.8.5",
+		"express": "^4.21.2",
+		"geoip-lite": "^1.4.10",
+		"jsonwebtoken": "^9.0.2",
+		"sequelize": "^6.37.5",
+		"useragent": "^2.3.0"
+	}
 }

@@ -1,3 +1,3 @@
 export interface SessionToken {
-    sessionId: number;
+	sessionId: number;
 }

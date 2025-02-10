@@ -1,4 +1,4 @@
 export interface HttpStatus {
-    code: number;
-    message: string;
+	code: number;
+	message: string;
 }

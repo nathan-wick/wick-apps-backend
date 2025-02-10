@@ -1,21 +1,21 @@
-import { lookup, } from "geoip-lite";
+import { lookup } from 'geoip-lite';
 
 const getLocationFromIp = (ipAddress?: string) => {
-    const unknownLocation = `Unknown`;
+	const unknownLocation = `Unknown`;
 
-    if (!ipAddress) {
-        return unknownLocation;
-    }
+	if (!ipAddress) {
+		return unknownLocation;
+	}
 
-    const geo = lookup(ipAddress);
+	const geo = lookup(ipAddress);
 
-    if (!geo) {
-        return unknownLocation;
-    }
+	if (!geo) {
+		return unknownLocation;
+	}
 
-    const location = `${geo.city}, ${geo.region}, ${geo.country}`;
+	const location = `${geo.city}, ${geo.region}, ${geo.country}`;
 
-    return location;
+	return location;
 };
 
 export default getLocationFromIp;
