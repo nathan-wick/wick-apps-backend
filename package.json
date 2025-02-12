@@ -6,7 +6,9 @@
 	"exports": {
 		"./package.json": "./package.json",
 		".": {
-			"import": "./distributable/index.js"
+			"types": "./distributable/index.d.ts",
+			"import": "./distributable/index.js",
+			"require": "./distributable/index.js"
 		}
 	},
 	"scripts": {
@@ -14,7 +16,7 @@
 		"format": "prettier --write .",
 		"build": "tsc",
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"release": "npm run format && npm run build && npm run test"
+		"publish": "npm run format && npm run build && npm run test && npm publish"
 	},
 	"repository": {
 		"type": "git",

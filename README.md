@@ -29,16 +29,9 @@ startApplication(sequelize, applicationPort, []);
 
 ## Development Documentation
 
-### Create a Project
+### Release Updated Version
 
-1. `npm init`
-
-### Create New Build
-
-1. `npm run build`
-
-### Release New Version
-
-1. `npm login`
-2. `npm run build`
-3. `npm publish --access public`
+1. Commit and push changes
+2. Create a version bump commit by running: `npm version patch`, `npm version minor`, or `npm version major`
+3. If you haven't already logged into npm, run: `npm login`
+4. Start the publish script by running: `npm run publish`
