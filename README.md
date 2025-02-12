@@ -31,8 +31,7 @@ startApplication(sequelize, applicationPort, []);
 
 ### Release Updated Version
 
-1. Commit all changes
+1. Commit and push all changes
 2. Create a version bump commit by running: `npm version patch`, `npm version minor`, or `npm version major`
-3. Push all changes to remote
-4. If you haven't already logged into npm, run: `npm login`
-5. Start the publish script by running: `npm run publish`
+3. If you haven't already logged into npm, run: `npm login`
+4. Start the release script by running: `npm run release`
