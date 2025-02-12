@@ -1,6 +1,6 @@
-import * as cors from 'cors';
-import * as express from 'express';
 import { HttpStatus } from '../interfaces/http-status';
+import cors from 'cors';
+import express from 'express';
 import { largeFileBytes } from '../constants/file-sizes';
 import sendErrorResponse from './send-error-response';
 

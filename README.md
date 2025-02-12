@@ -33,5 +33,5 @@ startApplication(sequelize, applicationPort, []);
 
 1. Commit and push all changes
 2. Create a version bump commit by running: `npm version patch`, `npm version minor`, or `npm version major`
-3. If you haven't already logged into npm, run: `npm login`
+3. If you haven't already, log into npm by running: `npm login`
 4. Start the release script by running: `npm run release`

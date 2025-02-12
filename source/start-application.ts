@@ -5,7 +5,7 @@ import createMainRouter from './utilities/create-main-router';
 import initializeDatabase from './utilities/initialize-database';
 import { rateLimiter } from './constants/rate-limiter';
 
-const startApplication = async (
+export const startApplication = async (
 	sequelize: Sequelize,
 	port: number,
 	routers: { url: string; router: express.Router }[],
@@ -20,5 +20,3 @@ const startApplication = async (
 		console.error(`Failed to start the application:`, error);
 	}
 };
-
-export default startApplication;

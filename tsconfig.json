@@ -7,8 +7,13 @@
 		"forceConsistentCasingInFileNames": true,
 		"skipLibCheck": true,
 		"declaration": true,
+		"declarationMap": true,
 		"sourceMap": true,
-		"strict": true
+		"strict": true,
+		"esModuleInterop": true,
+		"allowSyntheticDefaultImports": true,
+		"resolveJsonModule": true,
+		"isolatedModules": true
 	},
 	"include": ["source"]
 }

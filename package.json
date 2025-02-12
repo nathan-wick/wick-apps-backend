@@ -4,7 +4,6 @@
 	"description": "",
 	"main": "distributable/index.js",
 	"exports": {
-		"./package.json": "./package.json",
 		".": {
 			"types": "./distributable/index.d.ts",
 			"import": "./distributable/index.js",
