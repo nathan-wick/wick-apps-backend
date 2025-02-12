@@ -16,7 +16,7 @@
 		"format": "prettier --write .",
 		"build": "tsc",
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"publish": "npm run format && npm run build && npm run test && npm publish"
+		"publish": "npm run format && npm run build && npm publish"
 	},
 	"repository": {
 		"type": "git",
