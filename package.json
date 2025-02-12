@@ -1,6 +1,6 @@
 {
 	"name": "wick-apps-backend",
-	"version": "0.1.2",
+	"version": "0.1.3",
 	"description": "",
 	"main": "distributable/index.js",
 	"exports": {
