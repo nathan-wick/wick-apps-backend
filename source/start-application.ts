@@ -11,9 +11,9 @@ export const startApplication = async (
 	routers: { url: string; router: express.Router }[],
 ) => {
 	try {
+		await initializeDatabase(sequelize);
 		const mainRouter = createMainRouter(routers);
 		createApplication(port, mainRouter);
-		await initializeDatabase(sequelize);
 		rateLimiter.startCleanupInterval();
 	} catch (error) {
 		// eslint-disable-next-line no-console

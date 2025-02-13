@@ -15,24 +15,6 @@ class User extends Model {
 	public dashboardConfigurations?: DashboardConfiguration[];
 }
 
-User.hasMany(Session, {
-	as: `sessions`,
-	foreignKey: `userId`,
-	onDelete: `CASCADE`,
-});
-
-User.hasOne(Preferences, {
-	as: `preferences`,
-	foreignKey: `userId`,
-	onDelete: `CASCADE`,
-});
-
-User.hasMany(DashboardConfiguration, {
-	as: `dashboardConfigurations`,
-	foreignKey: `userId`,
-	onDelete: `CASCADE`,
-});
-
 export default User;
 export interface UserInput extends Partial<User> {}
 export interface UserOutput extends User {}

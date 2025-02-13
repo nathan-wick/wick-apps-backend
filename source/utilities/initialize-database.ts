@@ -152,6 +152,24 @@ const initializeUser = (sequelize: Sequelize) => {
 			sequelize,
 		},
 	);
+
+	User.hasMany(Session, {
+		as: `sessions`,
+		foreignKey: `userId`,
+		onDelete: `CASCADE`,
+	});
+	
+	User.hasOne(Preferences, {
+		as: `preferences`,
+		foreignKey: `userId`,
+		onDelete: `CASCADE`,
+	});
+	
+	User.hasMany(DashboardConfiguration, {
+		as: `dashboardConfigurations`,
+		foreignKey: `userId`,
+		onDelete: `CASCADE`,
+	});
 };
 
 const initializeDatabase = async (sequelize: Sequelize) => {
@@ -160,7 +178,6 @@ const initializeDatabase = async (sequelize: Sequelize) => {
 	initializeSession(sequelize);
 	initializeUser(sequelize);
 
-	// TODO Find a better way to do database updates
 	await sequelize.sync({ alter: true });
 };
 
