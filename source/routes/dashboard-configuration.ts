@@ -1,10 +1,10 @@
 import DashboardConfiguration, {
-	DashboardConfigurationInput,
-} from '../database-models/dashboard-configuration';
-import { Request, Response, Router } from 'express';
-import { RequestValidationOutput } from '../interfaces/request-validation-output';
-import runRequest from '../utilities/run-request';
-import throwError from '../utilities/throw-error';
+	type DashboardConfigurationInput,
+} from '../database-models/dashboard-configuration.js';
+import { type Request, type Response, Router } from 'express';
+import type { RequestValidationOutput } from '../interfaces/request-validation-output.js';
+import runRequest from '../utilities/run-request.js';
+import throwError from '../utilities/throw-error.js';
 
 const dashboardConfigurationRoute = Router();
 

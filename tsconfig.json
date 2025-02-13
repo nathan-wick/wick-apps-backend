@@ -1,19 +1,26 @@
 {
 	"compilerOptions": {
-		"outDir": "distributable",
-		"target": "ES6",
-		"module": "ESNext",
-		"moduleResolution": "Node",
-		"forceConsistentCasingInFileNames": true,
-		"skipLibCheck": true,
-		"declaration": true,
-		"declarationMap": true,
-		"sourceMap": true,
-		"strict": true,
+		/* Base Options: */
 		"esModuleInterop": true,
-		"allowSyntheticDefaultImports": true,
+		"skipLibCheck": true,
+		"target": "ESNext",
+		"allowJs": true,
 		"resolveJsonModule": true,
-		"isolatedModules": true
-	},
-	"include": ["source"]
+		"moduleDetection": "force",
+		"isolatedModules": true,
+		"verbatimModuleSyntax": true,
+
+		/* Strictness */
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"noImplicitOverride": true,
+
+		/* Transpiling */
+		"module": "NodeNext",
+		"outDir": "distributable",
+		"sourceMap": true,
+
+		/* Library: */
+		"declaration": true
+	}
 }

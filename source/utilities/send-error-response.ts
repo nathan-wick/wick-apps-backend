@@ -1,5 +1,5 @@
-import { HttpStatus } from '../interfaces/http-status';
-import { Response } from 'express';
+import type { HttpStatus } from '../interfaces/http-status.js';
+import type { Response } from 'express';
 
 const sendErrorResponse = (response: Response, error: HttpStatus) => {
 	if (!response.headersSent) {

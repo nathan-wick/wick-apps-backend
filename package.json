@@ -3,6 +3,7 @@
 	"version": "0.1.5",
 	"description": "",
 	"main": "distributable/index.js",
+	"type": "module",
 	"exports": {
 		".": {
 			"types": "./distributable/index.d.ts",

@@ -1,4 +1,4 @@
-import generateRandomWholeNumber from './generate-random-whole-number';
+import generateRandomWholeNumber from './generate-random-whole-number.js';
 
 const generateRandomCode = (
 	minimumLength: number = 4,

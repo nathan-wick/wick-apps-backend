@@ -1,7 +1,7 @@
-import DashboardConfiguration from './dashboard-configuration';
+import DashboardConfiguration from './dashboard-configuration.js';
 import { Model } from 'sequelize';
-import Preferences from './preferences';
-import Session from './session';
+import Preferences from './preferences.js';
+import Session from './session.js';
 
 class User extends Model {
 	public id!: number;

@@ -1,10 +1,10 @@
-import { Request, Response, Router } from 'express';
-import User, { UserInput } from '../database-models/user';
-import Preferences from '../database-models/preferences';
-import { RequestValidationOutput } from '../interfaces/request-validation-output';
-import runRequest from '../utilities/run-request';
-import { smallFileBytes } from '../constants/file-sizes';
-import throwError from '../utilities/throw-error';
+import { type Request, type Response, Router } from 'express';
+import User, { type UserInput } from '../database-models/user.js';
+import Preferences from '../database-models/preferences.js';
+import type { RequestValidationOutput } from '../interfaces/request-validation-output.js';
+import runRequest from '../utilities/run-request.js';
+import { smallFileBytes } from '../constants/file-sizes.js';
+import throwError from '../utilities/throw-error.js';
 
 const userRoute = Router();
 

@@ -1,9 +1,9 @@
-import { Request, Response } from 'express';
-import { CallSecurityOptions } from '../interfaces/call-security-options';
-import { HttpStatus } from '../interfaces/http-status';
-import { RequestValidationOutput } from '../interfaces/request-validation-output';
-import sendErrorResponse from './send-error-response';
-import validateRequest from './validate-request';
+import type { Request, Response } from 'express';
+import type { CallSecurityOptions } from '../interfaces/call-security-options.js';
+import type { HttpStatus } from '../interfaces/http-status.js';
+import type { RequestValidationOutput } from '../interfaces/request-validation-output.js';
+import sendErrorResponse from './send-error-response.js';
+import validateRequest from './validate-request.js';
 
 const runRequest = async (
 	call: {

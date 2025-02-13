@@ -1,8 +1,8 @@
-import { HttpStatus } from '../interfaces/http-status';
+import type { HttpStatus } from '../interfaces/http-status.js';
 import cors from 'cors';
 import express from 'express';
-import { largeFileBytes } from '../constants/file-sizes';
-import sendErrorResponse from './send-error-response';
+import { largeFileBytes } from '../constants/file-sizes.js';
+import sendErrorResponse from './send-error-response.js';
 
 const corsOptions = {
 	optionsSuccessStatus: 200,

@@ -1,21 +1,21 @@
-import { Request, Response, Router } from 'express';
-import Session, { SessionOutput } from '../database-models/session';
+import { type Request, type Response, Router } from 'express';
+import Session, { type SessionOutput } from '../database-models/session.js';
 import { Op } from 'sequelize';
-import { RequestValidationOutput } from '../interfaces/request-validation-output';
-import { SendVerificationEmailInput } from '../interfaces/send-verification-email-input';
-import { SignInInput } from '../interfaces/sign-in-input';
-import User from '../database-models/user';
-import { applicationKey } from '../constants/application-key';
-import decodeSessionToken from '../utilities/decode-session-token';
-import generateRandomCode from '../utilities/generate-random-code';
-import generateToken from '../utilities/code-session-token';
-import getLocationFromIp from '../utilities/get-location-from-ip';
-import hash from '../utilities/hash';
-import isHashMatch from '../utilities/is-hash-match';
-import runRequest from '../utilities/run-request';
-import simplifyUserAgent from '../utilities/simplify-user-agent';
-import throwError from '../utilities/throw-error';
-import validateEmail from '../utilities/validate-email';
+import type { RequestValidationOutput } from '../interfaces/request-validation-output.js';
+import type { SendVerificationEmailInput } from '../interfaces/send-verification-email-input.js';
+import type { SignInInput } from '../interfaces/sign-in-input.js';
+import User from '../database-models/user.js';
+import { applicationKey } from '../constants/application-key.js';
+import decodeSessionToken from '../utilities/decode-session-token.js';
+import generateRandomCode from '../utilities/generate-random-code.js';
+import generateToken from '../utilities/code-session-token.js';
+import getLocationFromIp from '../utilities/get-location-from-ip.js';
+import hash from '../utilities/hash.js';
+import isHashMatch from '../utilities/is-hash-match.js';
+import runRequest from '../utilities/run-request.js';
+import simplifyUserAgent from '../utilities/simplify-user-agent.js';
+import throwError from '../utilities/throw-error.js';
+import validateEmail from '../utilities/validate-email.js';
 
 const authenticationRoute = Router();
 

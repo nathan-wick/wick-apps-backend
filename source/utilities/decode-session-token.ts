@@ -1,5 +1,5 @@
-import { SessionToken } from '../interfaces/session-token';
-import throwError from './throw-error';
+import type { SessionToken } from '../interfaces/session-token.js';
+import throwError from './throw-error.js';
 import { verify } from 'jsonwebtoken';
 
 const decodeSessionToken = (codedToken: string, key: string): SessionToken => {

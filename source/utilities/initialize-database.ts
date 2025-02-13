@@ -1,11 +1,11 @@
 import { DataTypes, Sequelize } from 'sequelize';
-import DashboardConfiguration from '../database-models/dashboard-configuration';
-import Preferences from '../database-models/preferences';
-import Session from '../database-models/session';
-import User from '../database-models/user';
-import { brightnessValues } from '../constants/brightness';
-import { colorValues } from '../constants/color';
-import { dateFormatValues } from '../constants/date-format';
+import DashboardConfiguration from '../database-models/dashboard-configuration.js';
+import Preferences from '../database-models/preferences.js';
+import Session from '../database-models/session.js';
+import User from '../database-models/user.js';
+import { brightnessValues } from '../constants/brightness.js';
+import { colorValues } from '../constants/color.js';
+import { dateFormatValues } from '../constants/date-format.js';
 
 const initializeDashboardConfiguration = (sequelize: Sequelize) => {
 	DashboardConfiguration.init(

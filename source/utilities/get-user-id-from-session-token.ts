@@ -1,7 +1,7 @@
-import { Request } from 'express';
-import Session from '../database-models/session';
-import { applicationKey } from '../constants/application-key';
-import decodeSessionToken from './decode-session-token';
+import type { Request } from 'express';
+import Session from '../database-models/session.js';
+import { applicationKey } from '../constants/application-key.js';
+import decodeSessionToken from './decode-session-token.js';
 
 const getUserIdFromSessionToken = async (
 	request: Request,

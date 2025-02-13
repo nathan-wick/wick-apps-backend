@@ -1,11 +1,11 @@
-import { CallSecurityOptions } from '../interfaces/call-security-options';
-import { Request } from 'express';
-import { RequestValidationOutput } from '../interfaces/request-validation-output';
-import Session from '../database-models/session';
-import { applicationKey } from '../constants/application-key';
-import decodeSessionToken from './decode-session-token';
-import { rateLimiter } from '../constants/rate-limiter';
-import throwError from './throw-error';
+import type { CallSecurityOptions } from '../interfaces/call-security-options.js';
+import type { Request } from 'express';
+import type { RequestValidationOutput } from '../interfaces/request-validation-output.js';
+import Session from '../database-models/session.js';
+import { applicationKey } from '../constants/application-key.js';
+import decodeSessionToken from './decode-session-token.js';
+import { rateLimiter } from '../constants/rate-limiter.js';
+import throwError from './throw-error.js';
 
 const validateRequest = async (
 	request: Request,

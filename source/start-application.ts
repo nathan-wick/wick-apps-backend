@@ -1,9 +1,9 @@
 import * as express from 'express';
 import { Sequelize } from 'sequelize';
-import createApplication from './utilities/create-application';
-import createMainRouter from './utilities/create-main-router';
-import initializeDatabase from './utilities/initialize-database';
-import { rateLimiter } from './constants/rate-limiter';
+import createApplication from './utilities/create-application.js';
+import createMainRouter from './utilities/create-main-router.js';
+import initializeDatabase from './utilities/initialize-database.js';
+import { rateLimiter } from './constants/rate-limiter.js';
 
 export const startApplication = async (
 	sequelize: Sequelize,

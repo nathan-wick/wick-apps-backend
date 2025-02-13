@@ -1,8 +1,10 @@
-import Preferences, { PreferencesInput } from '../database-models/preferences';
-import { Request, Response, Router } from 'express';
-import { RequestValidationOutput } from '../interfaces/request-validation-output';
-import runRequest from '../utilities/run-request';
-import throwError from '../utilities/throw-error';
+import Preferences, {
+	type PreferencesInput,
+} from '../database-models/preferences.js';
+import { type Request, type Response, Router } from 'express';
+import type { RequestValidationOutput } from '../interfaces/request-validation-output.js';
+import runRequest from '../utilities/run-request.js';
+import throwError from '../utilities/throw-error.js';
 
 const preferencesRoute = Router();
 

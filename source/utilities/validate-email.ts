@@ -1,4 +1,4 @@
-import throwError from './throw-error';
+import throwError from './throw-error.js';
 
 const validateEmail = (email: string) => {
 	// eslint-disable-next-line prefer-named-capture-group, require-unicode-regexp
