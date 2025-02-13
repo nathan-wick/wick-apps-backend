@@ -1,4 +1,4 @@
-import { lookup } from 'geoip-lite';
+import geoip from 'geoip-lite';
 
 const getLocationFromIp = (ipAddress?: string) => {
 	const unknownLocation = `Unknown`;
@@ -7,7 +7,7 @@ const getLocationFromIp = (ipAddress?: string) => {
 		return unknownLocation;
 	}
 
-	const geo = lookup(ipAddress);
+	const geo = geoip.lookup(ipAddress);
 
 	if (!geo) {
 		return unknownLocation;
