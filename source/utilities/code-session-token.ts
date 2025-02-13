@@ -1,7 +1,7 @@
 import type { SessionToken } from '../interfaces/session-token.js';
-import { sign } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 
 const codeSessionToken = (sessionToken: SessionToken, key: string) =>
-	sign(sessionToken, key);
+	jwt.sign(sessionToken, key);
 
 export default codeSessionToken;
