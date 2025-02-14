@@ -72,7 +72,7 @@ dashboardConfigurationRoute.put(
 					DashboardConfiguration.create({
 						configuration: payload.configuration,
 						dashboard: payload.dashboard,
-						userId: requestValidationOutput.userId,
+						userId: requestValidationOutput.userId!,
 					});
 				return newDashboardConfiguration;
 			},

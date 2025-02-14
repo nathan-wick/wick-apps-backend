@@ -26,6 +26,7 @@
 		"no-throw-literal": "off",
 		"init-declarations": "off",
 		"no-unused-expressions": "off",
-		"max-lines-per-function": "off"
+		"max-lines-per-function": "off",
+		"no-use-before-define": "off"
 	}
 }
