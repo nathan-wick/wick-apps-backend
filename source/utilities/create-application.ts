@@ -1,5 +1,7 @@
 import type { HttpStatus } from '../interfaces/http-status.js';
+import { applicationConfiguration } from '../start-application.js';
 import cors from 'cors';
+import createMainRouter from './create-main-router.js';
 import express from 'express';
 import { largeFileBytes } from '../constants/file-sizes.js';
 import sendErrorResponse from './send-error-response.js';
@@ -10,7 +12,8 @@ const corsOptions = {
 	origin: true,
 };
 
-const createApplication = (port: number, mainRouter: express.Router) => {
+const createApplication = () => {
+	const mainRouter = createMainRouter();
 	const application: express.Application = express();
 
 	application.use(cors(corsOptions));
@@ -30,9 +33,9 @@ const createApplication = (port: number, mainRouter: express.Router) => {
 		sendErrorResponse(response, error);
 	});
 	application.disable(`x-powered-by`);
-	application.listen(port, () => {
+	application.listen(applicationConfiguration.port, () => {
 		// eslint-disable-next-line no-console
-		console.log(`Application is running on port ${port}`);
+		console.log(`Application is running on port ${applicationConfiguration.port}`);
 	});
 };
 

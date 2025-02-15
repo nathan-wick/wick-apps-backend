@@ -1,10 +1,8 @@
+import { authenticationRoute, dashboardConfigurationRoute, preferencesRoute, userRoute } from '../routes/routes.js';
 import { Router } from 'express';
-import authenticationRoute from '../routes/authentication.js';
-import dashboardConfigurationRoute from '../routes/dashboard-configuration.js';
-import preferencesRoute from '../routes/preferences.js';
-import userRoute from '../routes/user.js';
+import { applicationConfiguration } from '../start-application.js';
 
-const createMainRouter = (routers: { url: string; router: Router }[]) => {
+const createMainRouter = () => {
 	const router = Router();
 
 	router.use(`/authentication`, authenticationRoute);
@@ -12,8 +10,8 @@ const createMainRouter = (routers: { url: string; router: Router }[]) => {
 	router.use(`/preferences`, preferencesRoute);
 	router.use(`/user`, userRoute);
 
-	routers.forEach((additionalRouter) =>
-		router.use(additionalRouter.url, additionalRouter.router),
+	applicationConfiguration.routers.forEach((additionalRouter) =>
+		router.use(additionalRouter.path, additionalRouter.router),
 	);
 
 	return router;

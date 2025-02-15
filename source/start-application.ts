@@ -1,19 +1,17 @@
-import * as express from 'express';
-import { Sequelize } from 'sequelize';
+import type { ApplicationConfiguration } from './interfaces/application-configuration.js';
 import createApplication from './utilities/create-application.js';
-import createMainRouter from './utilities/create-main-router.js';
 import initializeDatabase from './utilities/initialize-database.js';
 import { rateLimiter } from './constants/rate-limiter.js';
 
+export let applicationConfiguration: ApplicationConfiguration;
+
 export const startApplication = async (
-	sequelize: Sequelize,
-	port: number,
-	routers: { url: string; router: express.Router }[],
+	applicationConfigurationInput: ApplicationConfiguration,
 ) => {
 	try {
-		await initializeDatabase(sequelize);
-		const mainRouter = createMainRouter(routers);
-		createApplication(port, mainRouter);
+		applicationConfiguration = applicationConfigurationInput;
+		await initializeDatabase();
+		createApplication();
 		rateLimiter.startCleanupInterval();
 	} catch (error) {
 		// eslint-disable-next-line no-console

@@ -1,12 +1,9 @@
-import Preferences, {
-	type PreferencesInput,
-} from '../database-models/preferences.js';
-import { type Request, type Response, Router } from 'express';
-import type { RequestValidationOutput } from '../interfaces/request-validation-output.js';
-import runRequest from '../utilities/run-request.js';
-import throwError from '../utilities/throw-error.js';
-
-const preferencesRoute = Router();
+import Preferences, { type PreferencesInput } from '../../database-models/preferences.js';
+import { type Request, type Response } from 'express';
+import type { RequestValidationOutput } from '../../interfaces/request-validation-output.js';
+import { preferencesRoute } from "../routes.js";
+import runRequest from '../../utilities/run-request.js';
+import throwError from '../../utilities/throw-error.js';
 
 preferencesRoute.put(`/`, async (request: Request, response: Response) => {
 	await runRequest(
@@ -32,5 +29,3 @@ preferencesRoute.put(`/`, async (request: Request, response: Response) => {
 		},
 	);
 });
-
-export default preferencesRoute;
