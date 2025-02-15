@@ -1,6 +1,6 @@
-import type { CallSecurityOptions } from '../interfaces/call-security-options.js';
+import type { CallSecurityOptions } from '../interfaces/authentication/call-security-options.js';
 import type { Request } from 'express';
-import type { RequestValidationOutput } from '../interfaces/request-validation-output.js';
+import type { RequestValidationOutput } from '../interfaces/authentication/request-validation-output.js';
 import Session from '../database-models/session.js';
 import { applicationKey } from '../constants/application-key.js';
 import decodeSessionToken from './decode-session-token.js';

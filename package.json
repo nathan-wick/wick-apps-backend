@@ -34,6 +34,7 @@
 		"@types/express": "^5.0.0",
 		"@types/geoip-lite": "^1.4.4",
 		"@types/jsonwebtoken": "^9.0.8",
+		"@types/nodemailer": "^6.4.17",
 		"@types/useragent": "^2.3.4",
 		"@typescript-eslint/eslint-plugin": "^7.11.0",
 		"@typescript-eslint/parser": "^7.11.0",
@@ -47,6 +48,7 @@
 		"express": "^4.21.2",
 		"geoip-lite": "^1.4.10",
 		"jsonwebtoken": "^9.0.2",
+		"nodemailer": "^6.10.0",
 		"sequelize": "^6.37.5",
 		"useragent": "^2.3.0"
 	}

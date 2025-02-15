@@ -1,12 +1,14 @@
 import { type Request, type Response } from 'express';
-import type { SendVerificationEmailInput } from '../../interfaces/send-verification-email-input.js';
+import type { SendVerificationEmailInput } from '../../interfaces/authentication/send-verification-email-input.js';
 import Session from '../../database-models/session.js';
 import User from '../../database-models/user.js';
+import { applicationConfiguration } from '../../start-application.js';
 import { authenticationRoute } from '../routes.js';
 import generateRandomCode from '../../utilities/generate-random-code.js';
 import getLocationFromIp from '../../utilities/get-location-from-ip.js';
 import hash from '../../utilities/hash.js';
 import runRequest from '../../utilities/run-request.js';
+import { sendEmail } from '../../utilities/send-email.js';
 import simplifyUserAgent from '../../utilities/simplify-user-agent.js';
 import throwError from '../../utilities/throw-error.js';
 import validateEmail from '../../utilities/validate-email.js';
@@ -50,9 +52,19 @@ authenticationRoute.post(
 					successfulAttempts: 0,
 					userId: user.id,
 				});
-				// TODO Send email.
-				// eslint-disable-next-line no-console
-				console.log(`Code: ${code}`);
+				// TODO Create a way for users to report fraud.
+				await sendEmail({
+					subject: `${applicationConfiguration.name} Verification Code`,
+					text: `${code} is your verification code to sign into ${applicationConfiguration.name}.\n
+					\n
+					Never share this code with anyone, including our support team.\n
+					We will never ask for this code via phone, email, or chat.`,
+					to: email,
+				});
+				if (applicationConfiguration.launchMode === `development`) {
+					// eslint-disable-next-line no-console
+					console.log(`Verification code sent to ${email}: ${code}`);
+				}
 				return { sessionId: session.id };
 			},
 		);

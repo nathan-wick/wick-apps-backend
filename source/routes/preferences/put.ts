@@ -1,7 +1,9 @@
-import Preferences, { type PreferencesInput } from '../../database-models/preferences.js';
+import Preferences, {
+	type PreferencesInput,
+} from '../../database-models/preferences.js';
 import { type Request, type Response } from 'express';
-import type { RequestValidationOutput } from '../../interfaces/request-validation-output.js';
-import { preferencesRoute } from "../routes.js";
+import type { RequestValidationOutput } from '../../interfaces/authentication/request-validation-output.js';
+import { preferencesRoute } from '../routes.js';
 import runRequest from '../../utilities/run-request.js';
 import throwError from '../../utilities/throw-error.js';
 

@@ -1,1 +1,4 @@
-export { startApplication } from './start-application.js';
+// Application
+export { startApplication, database } from './start-application.js';
+
+// Utilities

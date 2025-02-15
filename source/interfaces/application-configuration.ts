@@ -1,8 +1,15 @@
-import type { Router } from "express";
-import type { Sequelize } from "sequelize";
+import type { Router } from 'express';
 
 export interface ApplicationConfiguration {
-	database: Sequelize;
-    port: number;
-    routers: { path: string; router: Router; }[];
+	launchMode: `development` | `production`;
+	name: string;
+	database: { uri: string };
+	port: number;
+	routers: { path: string; router: Router }[];
+	email: {
+		host: string;
+		port: number;
+		fromAddress: string;
+		password: string;
+	};
 }

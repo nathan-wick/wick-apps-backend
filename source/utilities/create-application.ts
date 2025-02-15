@@ -34,8 +34,12 @@ const createApplication = () => {
 	});
 	application.disable(`x-powered-by`);
 	application.listen(applicationConfiguration.port, () => {
-		// eslint-disable-next-line no-console
-		console.log(`Application is running on port ${applicationConfiguration.port}`);
+		if (applicationConfiguration.launchMode === `development`) {
+			// eslint-disable-next-line no-console
+			console.log(
+				`Application is running on port ${applicationConfiguration.port}`,
+			);
+		}
 	});
 };
 

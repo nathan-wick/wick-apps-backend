@@ -1,6 +1,6 @@
 import { type Request, type Response } from 'express';
 import DashboardConfiguration from '../../database-models/dashboard-configuration.js';
-import type { RequestValidationOutput } from '../../interfaces/request-validation-output.js';
+import type { RequestValidationOutput } from '../../interfaces/authentication/request-validation-output.js';
 import { dashboardConfigurationRoute } from '../routes.js';
 import runRequest from '../../utilities/run-request.js';
 import throwError from '../../utilities/throw-error.js';

@@ -1,7 +1,7 @@
 import { type Request, type Response } from 'express';
 import Session, { type SessionOutput } from '../../database-models/session.js';
 import { Op } from 'sequelize';
-import type { RequestValidationOutput } from '../../interfaces/request-validation-output.js';
+import type { RequestValidationOutput } from '../../interfaces/authentication/request-validation-output.js';
 import { authenticationRoute } from '../routes.js';
 import runRequest from '../../utilities/run-request.js';
 import throwError from '../../utilities/throw-error.js';

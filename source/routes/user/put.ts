@@ -1,10 +1,10 @@
 import { type Request, type Response } from 'express';
 import User, { type UserInput } from '../../database-models/user.js';
-import type { RequestValidationOutput } from '../../interfaces/request-validation-output.js';
+import type { RequestValidationOutput } from '../../interfaces/authentication/request-validation-output.js';
 import runRequest from '../../utilities/run-request.js';
 import { smallFileBytes } from '../../constants/file-sizes.js';
 import throwError from '../../utilities/throw-error.js';
-import { userRoute } from "../routes.js";
+import { userRoute } from '../routes.js';
 
 userRoute.put(`/`, async (request: Request, response: Response) => {
 	await runRequest(

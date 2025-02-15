@@ -1,7 +1,7 @@
 import { type Request, type Response } from 'express';
 import { Op } from 'sequelize';
 import Session from '../../database-models/session.js';
-import type { SignInInput } from '../../interfaces/sign-in-input.js';
+import type { SignInInput } from '../../interfaces/authentication/sign-in-input.js';
 import { applicationKey } from '../../constants/application-key.js';
 import { authenticationRoute } from '../routes.js';
 import codeSessionToken from '../../utilities/code-session-token.js';

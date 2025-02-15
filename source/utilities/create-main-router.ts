@@ -1,4 +1,9 @@
-import { authenticationRoute, dashboardConfigurationRoute, preferencesRoute, userRoute } from '../routes/routes.js';
+import {
+	authenticationRoute,
+	dashboardConfigurationRoute,
+	preferencesRoute,
+	userRoute,
+} from '../routes/routes.js';
 import { Router } from 'express';
 import { applicationConfiguration } from '../start-application.js';
 
