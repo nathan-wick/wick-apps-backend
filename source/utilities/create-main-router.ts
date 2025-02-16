@@ -3,7 +3,7 @@ import {
 	dashboardConfigurationRoute,
 	preferencesRoute,
 	userRoute,
-} from '../routes/routes.js';
+} from '../routes.js';
 import { Router } from 'express';
 import { applicationConfiguration } from '../start-application.js';
 
