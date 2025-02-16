@@ -1,29 +1,38 @@
-import { AuthenticationController } from './controllers/authentication-controller.js';
+import { AuthenticationController } from './controllers/authentication.js';
 import { Router } from 'express';
-import { dashboardConfigurationController } from './controllers/dashboard-configuration-controller.js';
-import { preferencesController } from './controllers/preferences-controller.js';
-import { userController } from './controllers/user-controller.js';
+import { dashboardConfigurationController } from './controllers/dashboard-configuration.js';
+import { preferencesController } from './controllers/preferences.js';
+import { userController } from './controllers/user.js';
 
-export const authenticationRoute = Router();
-export const dashboardConfigurationRoute = Router();
-export const preferencesRoute = Router();
-export const userRoute = Router();
+export const mainRouter = Router();
 
-authenticationRoute.get(
+// Authentication
+const authenticationRouter = Router();
+mainRouter.use(`/authentication`, authenticationRouter);
+authenticationRouter.get(
 	`/active-sessions`,
 	AuthenticationController.getActiveSessions,
 );
-authenticationRoute.post(
+authenticationRouter.post(
 	`/send-verification-email`,
 	AuthenticationController.sendVerificationEmail,
 );
-authenticationRoute.post(`/sign-in`, AuthenticationController.signIn);
-authenticationRoute.post(`/sign-out`, AuthenticationController.signOut);
+authenticationRouter.post(`/sign-in`, AuthenticationController.signIn);
+authenticationRouter.post(`/sign-out`, AuthenticationController.signOut);
 
-dashboardConfigurationRoute.get(`/`, dashboardConfigurationController.get);
-dashboardConfigurationRoute.put(`/`, dashboardConfigurationController.put);
+// Dashboard Configuration
+const dashboardConfigurationRouter = Router();
+mainRouter.use(`/dashboard-configuration`, dashboardConfigurationRouter);
+dashboardConfigurationRouter.get(`/`, dashboardConfigurationController.get);
+dashboardConfigurationRouter.put(`/`, dashboardConfigurationController.put);
 
-preferencesRoute.put(`/`, preferencesController.put);
+// Preferences
+const preferencesRouter = Router();
+mainRouter.use(`/preferences`, preferencesRouter);
+preferencesRouter.put(`/`, preferencesController.put);
 
-userRoute.get(`/`, userController.get);
-userRoute.put(`/`, userController.put);
+// User
+const userRouter = Router();
+mainRouter.use(`/user`, userRouter);
+userRouter.get(`/`, userController.get);
+userRouter.put(`/`, userController.put);

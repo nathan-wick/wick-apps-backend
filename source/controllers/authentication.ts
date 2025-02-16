@@ -92,9 +92,9 @@ export class AuthenticationController {
 				await sendEmail({
 					subject: `${applicationConfiguration.name} Verification Code`,
 					text: `${code} is your verification code to sign into ${applicationConfiguration.name}.\n
-					\n
-					Never share this code with anyone, including our support team.\n
-					We will never ask for this code via phone, email, or chat.`,
+\n
+Never share this code with anyone, including our support team.\n
+We will never ask for this code via phone, email, or chat.`,
 					to: email,
 				});
 				if (applicationConfiguration.launchMode === `development`) {

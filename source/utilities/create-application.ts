@@ -1,9 +1,9 @@
 import type { HttpStatus } from '../interfaces/http-status.js';
 import { applicationConfiguration } from '../start-application.js';
 import cors from 'cors';
-import createMainRouter from './create-main-router.js';
 import express from 'express';
 import { largeFileBytes } from '../constants/file-sizes.js';
+import { mainRouter } from '../routes.js';
 import sendErrorResponse from './send-error-response.js';
 
 const corsOptions = {
@@ -13,7 +13,10 @@ const corsOptions = {
 };
 
 const createApplication = () => {
-	const mainRouter = createMainRouter();
+	applicationConfiguration.routers.forEach((additionalRouter) =>
+		mainRouter.use(additionalRouter.path, additionalRouter.router),
+	);
+
 	const application: express.Application = express();
 
 	application.use(cors(corsOptions));
