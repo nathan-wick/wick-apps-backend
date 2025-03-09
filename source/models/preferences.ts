@@ -10,9 +10,9 @@ import { type brightness, brightnessValues } from '../constants/brightness.js';
 import { type color, colorValues } from '../constants/color.js';
 import { type dateFormat, dateFormatValues } from '../constants/date-format.js';
 
-class Preferences extends Model<
-	InferAttributes<Preferences>,
-	InferCreationAttributes<Preferences>
+export class PreferencesModel extends Model<
+	InferAttributes<PreferencesModel>,
+	InferCreationAttributes<PreferencesModel>
 > {
 	declare userId: CreationOptional<number>;
 	declare brightness: brightness;
@@ -20,8 +20,8 @@ class Preferences extends Model<
 	declare primaryColor: color;
 }
 
-export const initializePreferences = (sequelize: Sequelize) => {
-	Preferences.init(
+export const initializePreferencesModel = (sequelize: Sequelize) => {
+	PreferencesModel.init(
 		{
 			brightness: {
 				allowNull: false,
@@ -48,6 +48,4 @@ export const initializePreferences = (sequelize: Sequelize) => {
 	);
 };
 
-export default Preferences;
-export interface PreferencesInput extends Partial<Preferences> {}
-export interface PreferencesOutput extends Preferences {}
+export default PreferencesModel;

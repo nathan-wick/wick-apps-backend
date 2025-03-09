@@ -27,6 +27,13 @@
 		"init-declarations": "off",
 		"no-unused-expressions": "off",
 		"max-lines-per-function": "off",
-		"no-use-before-define": "off"
+		"no-use-before-define": "off",
+		"class-methods-use-this": "off",
+		"require-await": "off",
+		"no-empty-function": "off",
+		"max-lines": "off",
+		"no-new": "off",
+		"no-nested-ternary": "off",
+		"no-undefined": "off"
 	}
 }

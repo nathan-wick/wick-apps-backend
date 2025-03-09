@@ -1,34 +1,70 @@
-import Preferences, {
-	type PreferencesInput,
-} from '../database-models/preferences.js';
-import { type Request, type Response } from 'express';
-import type { RequestValidationOutput } from '../interfaces/authentication/request-validation-output.js';
-import runRequest from '../utilities/run-request.js';
-import throwError from '../utilities/throw-error.js';
+import { BaseController } from './base.js';
+import type { HttpStatus } from '../interfaces/http-status.js';
+import PreferencesModel from '../models/preferences.js';
 
-export class preferencesController {
-	static async put(request: Request, response: Response) {
-		await runRequest(
-			{
-				request,
-				response,
-			},
-			{
-				sessionTokenIsRequired: true,
-			},
-			async (requestValidationOutput: RequestValidationOutput) => {
-				const { ...updateData }: PreferencesInput = request.body;
-				if (!requestValidationOutput.userId) {
-					throwError(400, `User ID is required.`);
-				}
-				const preferences = await Preferences.findByPk(
-					requestValidationOutput.userId,
-				);
-				if (!preferences) {
-					throwError(404, `Could not find preferences.`);
-				}
-				return await preferences!.update(updateData);
-			},
-		);
+export class PreferencesController extends BaseController<PreferencesModel> {
+	constructor() {
+		super(PreferencesModel);
+	}
+
+	protected override async validateGet(
+		item: PreferencesModel,
+		userId?: number,
+	): Promise<PreferencesModel> {
+		if (userId !== item.userId) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Cannot get ${this.titleCasedTypeName} that aren't yours.`,
+			};
+			throw error;
+		}
+
+		return item;
+	}
+
+	protected override async validatePost(
+		item: PreferencesModel,
+		userId?: number,
+	): Promise<PreferencesModel> {
+		if (userId !== item.userId) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Cannot create ${this.titleCasedTypeName} that aren't yours.`,
+			};
+			throw error;
+		}
+
+		return item;
+	}
+
+	protected override async validatePut(
+		existingItem: PreferencesModel,
+		newItem: Partial<PreferencesModel>,
+		userId?: number,
+	): Promise<Partial<PreferencesModel>> {
+		if (userId !== existingItem.userId || userId !== newItem.userId) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Cannot update ${this.titleCasedTypeName} that aren't yours.`,
+			};
+			throw error;
+		}
+
+		return newItem;
+	}
+
+	protected override async validateDelete(
+		item: PreferencesModel,
+		userId?: number,
+	): Promise<PreferencesModel> {
+		if (userId !== item.userId) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Cannot delete ${this.titleCasedTypeName} that aren't yours.`,
+			};
+			throw error;
+		}
+
+		return item;
 	}
 }

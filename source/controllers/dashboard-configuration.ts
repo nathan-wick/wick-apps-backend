@@ -1,78 +1,70 @@
-import DashboardConfiguration, {
-	type DashboardConfigurationInput,
-} from '../database-models/dashboard-configuration.js';
-import { type Request, type Response } from 'express';
-import type { RequestValidationOutput } from '../interfaces/authentication/request-validation-output.js';
-import runRequest from '../utilities/run-request.js';
-import throwError from '../utilities/throw-error.js';
+import { BaseController } from './base.js';
+import DashboardConfigurationModel from '../models/dashboard-configuration.js';
+import type { HttpStatus } from '../interfaces/http-status.js';
 
-export class dashboardConfigurationController {
-	static async get(request: Request, response: Response) {
-		await runRequest(
-			{
-				request,
-				response,
-			},
-			{
-				sessionTokenIsRequired: true,
-			},
-			async (requestValidationOutput: RequestValidationOutput) => {
-				const dashboard = String(request.query.dashboard);
-				if (!requestValidationOutput.userId) {
-					throwError(400, `User ID is required.`);
-				}
-				if (!dashboard) {
-					throwError(400, `Dashboard is required.`);
-				}
-				const dashboardConfiguration =
-					await DashboardConfiguration.findOne({
-						where: {
-							dashboard,
-							userId: requestValidationOutput.userId,
-						},
-					});
-				return dashboardConfiguration
-					? dashboardConfiguration.configuration
-					: null;
-			},
-		);
+export class DashboardConfigurationController extends BaseController<DashboardConfigurationModel> {
+	constructor() {
+		super(DashboardConfigurationModel);
 	}
 
-	static async put(request: Request, response: Response) {
-		await runRequest(
-			{
-				request,
-				response,
-			},
-			{
-				sessionTokenIsRequired: true,
-			},
-			async (requestValidationOutput: RequestValidationOutput) => {
-				const payload: DashboardConfigurationInput = request.body;
-				if (!requestValidationOutput.userId) {
-					throwError(400, `User ID is required.`);
-				}
-				if (!payload.dashboard) {
-					throwError(400, `Dashboard is required.`);
-				}
-				const dashboardConfiguration =
-					await DashboardConfiguration.findOne({
-						where: {
-							dashboard: payload.dashboard,
-							userId: requestValidationOutput.userId,
-						},
-					});
-				const newDashboardConfiguration =
-					dashboardConfiguration?.update({
-						configuration: payload.configuration,
-					}) ??
-					DashboardConfiguration.create({
-						configuration: payload.configuration,
-						dashboard: payload.dashboard,
-						userId: requestValidationOutput.userId!,
-					});
-				return newDashboardConfiguration;
-			},
-		);
+	protected override async validateGet(
+		item: DashboardConfigurationModel,
+		userId?: number,
+	): Promise<DashboardConfigurationModel> {
+		if (userId !== item.userId) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Cannot get a ${this.titleCasedTypeName} that isn't yours.`,
+			};
+			throw error;
+		}
+
+		return item;
+	}
+
+	protected override async validatePost(
+		item: DashboardConfigurationModel,
+		userId?: number,
+	): Promise<DashboardConfigurationModel> {
+		if (userId !== item.userId) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Cannot create a ${this.titleCasedTypeName} that isn't yours.`,
+			};
+			throw error;
+		}
+
+		return item;
+	}
+
+	protected override async validatePut(
+		existingItem: DashboardConfigurationModel,
+		newItem: Partial<DashboardConfigurationModel>,
+		userId?: number,
+	): Promise<Partial<DashboardConfigurationModel>> {
+		if (userId !== existingItem.userId || userId !== newItem.userId) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Cannot update a ${this.titleCasedTypeName} that isn't yours.`,
+			};
+			throw error;
+		}
+
+		return newItem;
+	}
+
+	protected override async validateDelete(
+		item: DashboardConfigurationModel,
+		userId?: number,
+	): Promise<DashboardConfigurationModel> {
+		if (userId !== item.userId) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Cannot delete a ${this.titleCasedTypeName} that isn't yours.`,
+			};
+			throw error;
+		}
+
+		return item;
 	}
 }

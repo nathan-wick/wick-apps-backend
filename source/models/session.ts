@@ -7,9 +7,9 @@ import {
 	Sequelize,
 } from 'sequelize';
 
-class Session extends Model<
-	InferAttributes<Session>,
-	InferCreationAttributes<Session>
+export class SessionModel extends Model<
+	InferAttributes<SessionModel>,
+	InferCreationAttributes<SessionModel>
 > {
 	declare id: CreationOptional<number>;
 	declare userId: number;
@@ -22,8 +22,8 @@ class Session extends Model<
 	declare location: string;
 }
 
-export const initializeSession = (sequelize: Sequelize) => {
-	Session.init(
+export const initializeSessionModel = (sequelize: Sequelize) => {
+	SessionModel.init(
 		{
 			code: {
 				allowNull: false,
@@ -67,7 +67,4 @@ export const initializeSession = (sequelize: Sequelize) => {
 	);
 };
 
-export default Session;
-export interface SessionInput extends Partial<Session> {}
-export interface SessionOutput
-	extends Pick<Session, `started` | `device` | `location` | `expires`> {}
+export default SessionModel;

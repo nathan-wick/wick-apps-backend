@@ -7,9 +7,9 @@ import {
 	Sequelize,
 } from 'sequelize';
 
-class DashboardConfiguration extends Model<
-	InferAttributes<DashboardConfiguration>,
-	InferCreationAttributes<DashboardConfiguration>
+export class DashboardConfigurationModel extends Model<
+	InferAttributes<DashboardConfigurationModel>,
+	InferCreationAttributes<DashboardConfigurationModel>
 > {
 	declare id: CreationOptional<number>;
 	declare userId: number;
@@ -17,8 +17,8 @@ class DashboardConfiguration extends Model<
 	declare configuration: string;
 }
 
-export const initializeDashboardConfiguration = (sequelize: Sequelize) => {
-	DashboardConfiguration.init(
+export const initializeDashboardConfigurationModel = (sequelize: Sequelize) => {
+	DashboardConfigurationModel.init(
 		{
 			configuration: {
 				allowNull: false,
@@ -42,7 +42,4 @@ export const initializeDashboardConfiguration = (sequelize: Sequelize) => {
 	);
 };
 
-export default DashboardConfiguration;
-export interface DashboardConfigurationInput
-	extends Omit<DashboardConfiguration, `id`> {}
-export interface DashboardConfigurationOutput extends DashboardConfiguration {}
+export default DashboardConfigurationModel;
