@@ -1,19 +1,15 @@
 import { type Request, type Response } from 'express';
-import { BaseController } from './base.js';
-import { Emailer } from '../utilities/emailer.js';
-import type { HttpStatus } from '../interfaces/http-status.js';
+import { BaseController } from './base';
+import { Emailer } from '../utilities/emailer';
+import type { HttpStatus } from '../interfaces/http-status';
 import { Op } from 'sequelize';
-import SessionModel from '../models/session.js';
-import UserModel from '../models/user.js';
-import { applicationConfiguration } from '../utilities/application.js';
-import { emailer } from '../constants/emailer.js';
-import generateRandomCode from '../utilities/generate-random-code.js';
-import getLocationFromIp from '../utilities/get-location-from-ip.js';
-import hash from '../utilities/hash.js';
-import isHashMatch from '../utilities/is-hash-match.js';
-import sendErrorResponse from '../utilities/send-error-response.js';
-import { sessionTokenValidator } from '../constants/session-token-validator.js';
-import simplifyUserAgent from '../utilities/simplify-user-agent.js';
+import SessionModel from '../models/session';
+import { Shield } from '../utilities/shield';
+import UserModel from '../models/user';
+import { applicationConfiguration } from '../utilities/application';
+import { emailer } from '../constants/emailer';
+import sendErrorResponse from '../utilities/send-error-response';
+import { sessionTokenValidator } from '../constants/session-token-validator';
 
 export class SessionController extends BaseController<SessionModel> {
 	constructor() {
@@ -78,15 +74,15 @@ export class SessionController extends BaseController<SessionModel> {
 			const user =
 				(await UserModel.findOne({ where: { email } })) ??
 				(await UserModel.create({ email }));
-			const code = generateRandomCode();
-			const device = simplifyUserAgent(request.get(`User-Agent`));
-			const location = getLocationFromIp(request.ip);
+			const code = Shield.generateRandomCode();
+			const device = Shield.simplifyUserAgent(request.get(`User-Agent`));
+			const location = Shield.getLocationFromIp(request.ip);
 			const now = new Date();
 			const oneMonthFromNow = new Date(
 				new Date().setTime(now.getTime() + 30 * 24 * 60 * 60 * 1000),
 			);
 			const session = await SessionModel.create({
-				code: await hash(String(code)),
+				code: await Shield.hash(String(code)),
 				device,
 				expires: oneMonthFromNow,
 				failedAttempts: 0,
@@ -141,7 +137,7 @@ We will never ask for this code via phone, email, or chat.`,
 				};
 				throw error;
 			}
-			const codeIsValid = await isHashMatch(code, session!.code);
+			const codeIsValid = await Shield.isHashMatch(code, session!.code);
 			if (!codeIsValid) {
 				if (session.failedAttempts > 0) {
 					const error: HttpStatus = {

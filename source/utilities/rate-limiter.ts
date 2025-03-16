@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import type { HttpStatus } from '../interfaces/http-status.js';
+import type { HttpStatus } from '../interfaces/http-status';
 import { createHash } from 'crypto';
 
 export interface RateLimiterOptions {

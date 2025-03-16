@@ -6,9 +6,9 @@ import {
 	Model,
 	Sequelize,
 } from 'sequelize';
-import DashboardConfiguration from './dashboard-configuration.js';
-import Preferences from './preferences.js';
-import Session from './session.js';
+import DashboardConfiguration from './dashboard-configuration';
+import Preferences from './preferences';
+import Session from './session';
 
 export class UserModel extends Model<
 	InferAttributes<UserModel>,

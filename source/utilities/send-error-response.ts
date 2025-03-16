@@ -1,4 +1,4 @@
-import type { HttpStatus } from '../interfaces/http-status.js';
+import type { HttpStatus } from '../interfaces/http-status';
 import type { Response } from 'express';
 
 const sendErrorResponse = (response: Response, error: HttpStatus) => {

@@ -1,6 +1,6 @@
-import { BaseController } from './base.js';
-import DashboardConfigurationModel from '../models/dashboard-configuration.js';
-import type { HttpStatus } from '../interfaces/http-status.js';
+import { BaseController } from './base';
+import DashboardConfigurationModel from '../models/dashboard-configuration';
+import type { HttpStatus } from '../interfaces/http-status';
 
 export class DashboardConfigurationController extends BaseController<DashboardConfigurationModel> {
 	constructor() {

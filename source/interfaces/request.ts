@@ -1,5 +1,5 @@
 import 'express';
-import type SessionModel from '../models/session.js';
+import type SessionModel from '../models/session';
 
 // eslint-disable-next-line quotes
 declare module 'express' {

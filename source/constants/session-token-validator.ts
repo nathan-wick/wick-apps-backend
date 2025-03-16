@@ -1,3 +1,3 @@
-import SessionTokenValidator from '../utilities/session-token-validator.js';
+import SessionTokenValidator from '../utilities/session-token-validator';
 
 export const sessionTokenValidator = new SessionTokenValidator();

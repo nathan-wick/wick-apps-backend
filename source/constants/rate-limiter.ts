@@ -1,3 +1,3 @@
-import RateLimiter from '../utilities/rate-limiter.js';
+import RateLimiter from '../utilities/rate-limiter';
 
 export const rateLimiter = new RateLimiter();

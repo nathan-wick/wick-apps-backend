@@ -1,6 +1,6 @@
-import { BaseController } from './base.js';
-import type { HttpStatus } from '../interfaces/http-status.js';
-import UserModel from '../models/user.js';
+import { BaseController } from './base';
+import type { HttpStatus } from '../interfaces/http-status';
+import UserModel from '../models/user';
 
 export class UserController extends BaseController<UserModel> {
 	constructor() {

@@ -1,26 +1,26 @@
 /* eslint-disable no-console */
-import { BaseController } from '../controllers/base.js';
-import { DashboardConfigurationController } from '../controllers/dashboard-configuration.js';
-import type { HttpStatus } from '../interfaces/http-status.js';
-import { PreferencesController } from '../controllers/preferences.js';
-import type SMTPTransport from 'nodemailer/lib/smtp-transport/index.js';
+import { BaseController } from '../controllers/base';
+import { DashboardConfigurationController } from '../controllers/dashboard-configuration';
+import type { HttpStatus } from '../interfaces/http-status';
+import { PreferencesController } from '../controllers/preferences';
+import type SMTPTransport from 'nodemailer/lib/smtp-transport/index';
 import { Sequelize } from 'sequelize';
-import { SessionController } from '../controllers/session.js';
-import { UserController } from '../controllers/user.js';
+import { SessionController } from '../controllers/session';
+import { UserController } from '../controllers/user';
 import cors from 'cors';
 import express from 'express';
-import { initializeDashboardConfigurationModel } from '../models/dashboard-configuration.js';
-import { initializePreferencesModel } from '../models/preferences.js';
-import { initializeSessionModel } from '../models/session.js';
-import { initializeUserModel } from '../models/user.js';
-import { largeFileBytes } from '../constants/file-sizes.js';
-import { mainRouter } from '../constants/main-router.js';
+import { initializeDashboardConfigurationModel } from '../models/dashboard-configuration';
+import { initializePreferencesModel } from '../models/preferences';
+import { initializeSessionModel } from '../models/session';
+import { initializeUserModel } from '../models/user';
+import { largeFileBytes } from '../constants/file-sizes';
+import { mainRouter } from '../constants/main-router';
 import nodemailer from 'nodemailer';
-import { rateLimiter } from '../constants/rate-limiter.js';
-import sendErrorResponse from './send-error-response.js';
-import { sessionTokenValidator } from '../constants/session-token-validator.js';
+import { rateLimiter } from '../constants/rate-limiter';
+import sendErrorResponse from './send-error-response';
+import { sessionTokenValidator } from '../constants/session-token-validator';
 
-interface ApplicationConfiguration {
+export interface ApplicationConfiguration {
 	name: string;
 	database: { uri: string };
 	port: number;
@@ -34,7 +34,6 @@ interface ApplicationConfiguration {
 	};
 	cors: {
 		optionsSuccessStatus: number;
-		// TODO Verify certain domains
 		origin: boolean;
 	};
 }
@@ -47,12 +46,31 @@ export let emailTransporter: nodemailer.Transporter<
 >;
 
 export class Application {
+	public express: express.Application;
 	private configuration: ApplicationConfiguration;
 
 	constructor(configuration: ApplicationConfiguration) {
+		this.express = express();
 		this.configuration = configuration;
-		applicationConfiguration = configuration;
-		database = new Sequelize(configuration.database.uri, {
+		this.initializeGlobalVariables();
+	}
+
+	public async start() {
+		try {
+			console.log(`Starting application...`);
+			this.initializeModels();
+			this.initializeControllers();
+			await this.initializeDatabase();
+			this.initializeExpress();
+			console.log(`Application started.`);
+		} catch (error) {
+			console.error(`Application failed.`, error);
+		}
+	}
+
+	private initializeGlobalVariables() {
+		applicationConfiguration = this.configuration;
+		database = new Sequelize(this.configuration.database.uri, {
 			define: {
 				freezeTableName: true,
 			},
@@ -60,50 +78,13 @@ export class Application {
 		});
 		emailTransporter = nodemailer.createTransport({
 			auth: {
-				pass: configuration.email.password,
-				user: configuration.email.fromAddress,
+				pass: this.configuration.email.password,
+				user: this.configuration.email.fromAddress,
 			},
-			host: configuration.email.host,
-			port: configuration.email.port,
-			secure: configuration.email.port === 465,
+			host: this.configuration.email.host,
+			port: this.configuration.email.port,
+			secure: this.configuration.email.port === 465,
 		});
-		this.initializeModels();
-		this.initializeControllers();
-	}
-
-	public async start() {
-		try {
-			console.log(`Starting application...`);
-			await database.sync({ alter: true });
-			const application: express.Application = express();
-			application.use(cors(this.configuration.cors));
-			application.use(express.json({ limit: largeFileBytes }));
-			application.use(
-				express.urlencoded({
-					extended: true,
-					limit: largeFileBytes,
-				}),
-			);
-			application.use(rateLimiter.middleware());
-			application.use(sessionTokenValidator.middleware());
-			application.use(mainRouter);
-			application.use(
-				(request: express.Request, response: express.Response) => {
-					const error: HttpStatus = {
-						code: 404,
-						message: `The resource you are looking for could not be found.`,
-					};
-					sendErrorResponse(response, error);
-				},
-			);
-			// TODO Create error handler
-			application.disable(`x-powered-by`);
-			application.listen(this.configuration.port, () => {
-				console.log(`Application started.`);
-			});
-		} catch (error) {
-			console.error(`Application failed to start.`);
-		}
 	}
 
 	private initializeModels() {
@@ -118,5 +99,34 @@ export class Application {
 		new PreferencesController();
 		new SessionController();
 		new UserController();
+	}
+
+	private async initializeDatabase() {
+		await database.sync({ alter: true });
+	}
+
+	private async initializeExpress() {
+		this.express.use(cors(this.configuration.cors));
+		this.express.use(express.json({ limit: largeFileBytes }));
+		this.express.use(
+			express.urlencoded({
+				extended: true,
+				limit: largeFileBytes,
+			}),
+		);
+		this.express.use(rateLimiter.middleware());
+		this.express.use(sessionTokenValidator.middleware());
+		this.express.use(mainRouter);
+		this.express.use(
+			(request: express.Request, response: express.Response) => {
+				const error: HttpStatus = {
+					code: 404,
+					message: `The resource you are looking for could not be found.`,
+				};
+				sendErrorResponse(response, error);
+			},
+		);
+		this.express.disable(`x-powered-by`);
+		this.express.listen(this.configuration.port);
 	}
 }

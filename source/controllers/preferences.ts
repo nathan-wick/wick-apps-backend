@@ -1,6 +1,6 @@
-import { BaseController } from './base.js';
-import type { HttpStatus } from '../interfaces/http-status.js';
-import PreferencesModel from '../models/preferences.js';
+import { BaseController } from './base';
+import type { HttpStatus } from '../interfaces/http-status';
+import PreferencesModel from '../models/preferences';
 
 export class PreferencesController extends BaseController<PreferencesModel> {
 	constructor() {

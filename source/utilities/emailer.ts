@@ -1,5 +1,5 @@
-import { applicationConfiguration, emailTransporter } from './application.js';
-import type { HttpStatus } from '../interfaces/http-status.js';
+import { applicationConfiguration, emailTransporter } from './application';
+import type { HttpStatus } from '../interfaces/http-status';
 
 export interface EmailOptions {
 	to: string;

@@ -1,11 +1,17 @@
 // Constants
-export { emailer } from './constants/emailer.js';
+export { emailer } from './constants/emailer';
+export { sessionTokenValidator } from './constants/session-token-validator';
 
 // Utilities
-export { Application, database } from './utilities/application.js';
+export {
+	type ApplicationConfiguration,
+	Application,
+	database,
+} from './utilities/application';
+export { Shield } from './utilities/shield';
 
 // Models
-export { DashboardConfigurationModel } from './models/dashboard-configuration.js';
-export { PreferencesModel } from './models/preferences.js';
-export { SessionModel } from './models/session.js';
-export { UserModel } from './models/user.js';
+export { DashboardConfigurationModel } from './models/dashboard-configuration';
+export { PreferencesModel } from './models/preferences';
+export { SessionModel } from './models/session';
+export { UserModel } from './models/user';

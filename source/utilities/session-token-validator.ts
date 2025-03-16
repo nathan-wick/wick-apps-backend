@@ -1,16 +1,16 @@
 import type { NextFunction, Request, Response } from 'express';
-import type { HttpStatus } from '../interfaces/http-status.js';
-import SessionModel from '../models/session.js';
-import type { SessionToken } from '../interfaces/session-token.js';
-import generateRandomKey from './generate-random-key.js';
+import type { HttpStatus } from '../interfaces/http-status';
+import SessionModel from '../models/session';
+import type { SessionToken } from '../interfaces/session-token';
+import { Shield } from './shield';
 import jwt from 'jsonwebtoken';
-import sendErrorResponse from './send-error-response.js';
+import sendErrorResponse from './send-error-response';
 
 export default class SessionTokenValidator {
 	private key: string;
 
 	constructor() {
-		this.key = generateRandomKey();
+		this.key = Shield.generateRandomKey();
 	}
 
 	public middleware() {

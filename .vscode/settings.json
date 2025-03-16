@@ -3,6 +3,8 @@
 		"DATEONLY",
 		"geoip",
 		"Includeable",
-		"includeables"
+		"includeables",
+		"Vator",
+		"wickapps"
 	]
 }

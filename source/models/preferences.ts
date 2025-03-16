@@ -6,9 +6,9 @@ import {
 	Model,
 	Sequelize,
 } from 'sequelize';
-import { type brightness, brightnessValues } from '../constants/brightness.js';
-import { type color, colorValues } from '../constants/color.js';
-import { type dateFormat, dateFormatValues } from '../constants/date-format.js';
+import { type brightness, brightnessValues } from '../constants/brightness';
+import { type color, colorValues } from '../constants/color';
+import { type dateFormat, dateFormatValues } from '../constants/date-format';
 
 export class PreferencesModel extends Model<
 	InferAttributes<PreferencesModel>,

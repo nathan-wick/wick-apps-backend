@@ -1,10 +1,16 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { type Attributes, type Includeable, type Model, type ModelStatic, type NonNullFindOptions } from 'sequelize';
+import {
+	type Attributes,
+	type Includeable,
+	type Model,
+	type ModelStatic,
+	type NonNullFindOptions,
+} from 'sequelize';
 import { type Request, type Response, Router } from 'express';
-import type { HttpStatus } from '../interfaces/http-status.js';
-import { database } from '../utilities/application.js';
-import { mainRouter } from '../constants/main-router.js';
-import sendErrorResponse from '../utilities/send-error-response.js';
+import type { HttpStatus } from '../interfaces/http-status';
+import { database } from '../utilities/application';
+import { mainRouter } from '../constants/main-router';
+import sendErrorResponse from '../utilities/send-error-response';
 
 interface BaseControllerOptions {
 	allowAnonymousDelete: boolean;
@@ -110,7 +116,10 @@ export abstract class BaseController<Type extends Model> {
 					? (request.query.attributes as string[])
 					: [request.query.attributes as string]
 				: [];
-			const item = await this.model.findByPk(itemId, this.getFindOptions(requestedAttributes));
+			const item = await this.model.findByPk(
+				itemId,
+				this.getFindOptions(requestedAttributes),
+			);
 			if (!item) {
 				const error: HttpStatus = {
 					code: 404,
@@ -261,10 +270,18 @@ export abstract class BaseController<Type extends Model> {
 		this.initializeAdditionalRoutes();
 	}
 
-	private getFindOptions(attributes: string[]): Omit<NonNullFindOptions<Attributes<Type>>, `where`> {
-		const cleanedAttributes = attributes.map(attribute => attribute.trim().toLowerCase());
-		const directAttributes = cleanedAttributes.filter((cleanedAttribute) => !cleanedAttribute.includes(`.`));
-		const nestedAttributes = cleanedAttributes.filter((cleanedAttribute) => cleanedAttribute.includes(`.`));
+	private getFindOptions(
+		attributes: string[],
+	): Omit<NonNullFindOptions<Attributes<Type>>, `where`> {
+		const cleanedAttributes = attributes.map((attribute) =>
+			attribute.trim().toLowerCase(),
+		);
+		const directAttributes = cleanedAttributes.filter(
+			(cleanedAttribute) => !cleanedAttribute.includes(`.`),
+		);
+		const nestedAttributes = cleanedAttributes.filter((cleanedAttribute) =>
+			cleanedAttribute.includes(`.`),
+		);
 		return {
 			attributes: directAttributes,
 			include: this.buildIncludeables(nestedAttributes),
@@ -274,7 +291,7 @@ export abstract class BaseController<Type extends Model> {
 
 	private buildIncludeables(attributes: string[]): Includeable[] {
 		const includeMap = new Map<string, string[]>();
-		attributes.forEach(attribute => {
+		attributes.forEach((attribute) => {
 			const parts = attribute.split(`.`);
 			const [parent, ...childParts] = parts;
 			const child = childParts.join(`.`);
@@ -288,8 +305,10 @@ export abstract class BaseController<Type extends Model> {
 		});
 		return Array.from(includeMap.entries()).map(([parent, children]) => ({
 			as: parent,
-			attributes: children.filter(child => !child.includes(`.`)),
-			include: this.buildIncludeables(children.filter(child => child.includes(`.`))),
+			attributes: children.filter((child) => !child.includes(`.`)),
+			include: this.buildIncludeables(
+				children.filter((child) => child.includes(`.`)),
+			),
 			model: database.models[parent],
 		}));
 	}
