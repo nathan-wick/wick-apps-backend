@@ -12,7 +12,7 @@ import { database } from '../utilities/application';
 import { mainRouter } from '../constants/main-router';
 import sendErrorResponse from '../utilities/send-error-response';
 
-interface BaseControllerOptions {
+export interface BaseControllerOptions {
 	allowAnonymousDelete: boolean;
 	allowAnonymousGet: boolean;
 	allowAnonymousPost: boolean;
@@ -23,7 +23,7 @@ interface BaseControllerOptions {
 	enablePut: boolean;
 }
 
-const DEFAULT_OPTIONS: BaseControllerOptions = {
+export const defaultOptions: BaseControllerOptions = {
 	allowAnonymousDelete: false,
 	allowAnonymousGet: false,
 	allowAnonymousPost: false,
@@ -36,12 +36,12 @@ const DEFAULT_OPTIONS: BaseControllerOptions = {
 
 export abstract class BaseController<Type extends Model> {
 	public router: Router;
-	protected model: ModelStatic<Type>;
-	protected primaryKeyAttribute: string;
-	protected kebabCasedTypeName: string;
-	protected titleCasedTypeName: string;
-	protected lowerCasedTypeName: string;
-	private options: BaseControllerOptions;
+	public options: BaseControllerOptions;
+	public model: ModelStatic<Type>;
+	public primaryKeyAttribute: string;
+	public kebabCasedTypeName: string;
+	public titleCasedTypeName: string;
+	public lowerCasedTypeName: string;
 
 	constructor(
 		model: ModelStatic<Type>,
@@ -50,7 +50,7 @@ export abstract class BaseController<Type extends Model> {
 		this.router = Router();
 		this.model = model;
 		this.options = {
-			...DEFAULT_OPTIONS,
+			...defaultOptions,
 			...options,
 		};
 		this.primaryKeyAttribute = this.model.primaryKeyAttribute;
@@ -71,15 +71,15 @@ export abstract class BaseController<Type extends Model> {
 		this.initializeRoutes();
 	}
 
-	protected async validateGet(item: Type, userId?: number): Promise<Type> {
+	public async validateGet(item: Type, userId?: number): Promise<Type> {
 		return item;
 	}
 
-	protected async validatePost(item: Type, userId?: number): Promise<Type> {
+	public async validatePost(item: Type, userId?: number): Promise<Type> {
 		return item;
 	}
 
-	protected async validatePut(
+	public async validatePut(
 		existingItem: Type,
 		newItem: Partial<Type>,
 		userId?: number,
@@ -87,7 +87,7 @@ export abstract class BaseController<Type extends Model> {
 		return newItem;
 	}
 
-	protected async validateDelete(item: Type, userId?: number): Promise<Type> {
+	public async validateDelete(item: Type, userId?: number): Promise<Type> {
 		return item;
 	}
 
@@ -103,8 +103,8 @@ export abstract class BaseController<Type extends Model> {
 				};
 				throw error;
 			}
-			const itemId = Number(request.params.id);
-			if (itemId < 1) {
+			const primaryKey = Number(request.params.id ?? 0);
+			if (primaryKey < 1) {
 				const error: HttpStatus = {
 					code: 400,
 					message: `Invalid ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
@@ -117,13 +117,13 @@ export abstract class BaseController<Type extends Model> {
 					: [request.query.attributes as string]
 				: [];
 			const item = await this.model.findByPk(
-				itemId,
+				primaryKey,
 				this.getFindOptions(requestedAttributes),
 			);
 			if (!item) {
 				const error: HttpStatus = {
 					code: 404,
-					message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${itemId} not found.`,
+					message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${primaryKey} not found.`,
 				};
 				throw error;
 			}
@@ -272,15 +272,16 @@ export abstract class BaseController<Type extends Model> {
 
 	private getFindOptions(
 		attributes: string[],
-	): Omit<NonNullFindOptions<Attributes<Type>>, `where`> {
-		const cleanedAttributes = attributes.map((attribute) =>
-			attribute.trim().toLowerCase(),
+	): Omit<NonNullFindOptions<Attributes<Type>>, `where`> | undefined {
+		if (attributes.length === 0) {
+			return undefined;
+		}
+
+		const directAttributes = attributes.filter(
+			(attribute) => !attribute.includes(`.`),
 		);
-		const directAttributes = cleanedAttributes.filter(
-			(cleanedAttribute) => !cleanedAttribute.includes(`.`),
-		);
-		const nestedAttributes = cleanedAttributes.filter((cleanedAttribute) =>
-			cleanedAttribute.includes(`.`),
+		const nestedAttributes = attributes.filter((attribute) =>
+			attribute.includes(`.`),
 		);
 		return {
 			attributes: directAttributes,

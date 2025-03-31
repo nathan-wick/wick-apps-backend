@@ -48,23 +48,35 @@ export let emailTransporter: nodemailer.Transporter<
 export class Application {
 	public express: express.Application;
 	private configuration: ApplicationConfiguration;
+	private server?: ReturnType<typeof this.express.listen>;
 
 	constructor(configuration: ApplicationConfiguration) {
 		this.express = express();
 		this.configuration = configuration;
-		this.initializeGlobalVariables();
 	}
 
 	public async start() {
 		try {
 			console.log(`Starting application...`);
+			this.initializeGlobalVariables();
 			this.initializeModels();
 			this.initializeControllers();
 			await this.initializeDatabase();
 			this.initializeExpress();
 			console.log(`Application started.`);
 		} catch (error) {
-			console.error(`Application failed.`, error);
+			console.error(`Error while starting the application.`, error);
+		}
+	}
+
+	public async stop() {
+		try {
+			console.log(`Stopping application...`);
+			await database.close();
+			this.server?.close();
+			console.log(`Application stopped.`);
+		} catch (error) {
+			console.error(`Error while stopping the application.`, error);
 		}
 	}
 
@@ -127,6 +139,6 @@ export class Application {
 			},
 		);
 		this.express.disable(`x-powered-by`);
-		this.express.listen(this.configuration.port);
+		this.server = this.express.listen(this.configuration.port);
 	}
 }

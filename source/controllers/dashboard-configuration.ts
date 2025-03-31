@@ -7,7 +7,7 @@ export class DashboardConfigurationController extends BaseController<DashboardCo
 		super(DashboardConfigurationModel);
 	}
 
-	protected override async validateGet(
+	public override async validateGet(
 		item: DashboardConfigurationModel,
 		userId?: number,
 	): Promise<DashboardConfigurationModel> {
@@ -22,7 +22,7 @@ export class DashboardConfigurationController extends BaseController<DashboardCo
 		return item;
 	}
 
-	protected override async validatePost(
+	public override async validatePost(
 		item: DashboardConfigurationModel,
 		userId?: number,
 	): Promise<DashboardConfigurationModel> {
@@ -37,7 +37,7 @@ export class DashboardConfigurationController extends BaseController<DashboardCo
 		return item;
 	}
 
-	protected override async validatePut(
+	public override async validatePut(
 		existingItem: DashboardConfigurationModel,
 		newItem: Partial<DashboardConfigurationModel>,
 		userId?: number,
@@ -53,7 +53,7 @@ export class DashboardConfigurationController extends BaseController<DashboardCo
 		return newItem;
 	}
 
-	protected override async validateDelete(
+	public override async validateDelete(
 		item: DashboardConfigurationModel,
 		userId?: number,
 	): Promise<DashboardConfigurationModel> {

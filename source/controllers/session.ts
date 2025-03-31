@@ -19,7 +19,7 @@ export class SessionController extends BaseController<SessionModel> {
 		});
 	}
 
-	protected override async validateGet(
+	public override async validateGet(
 		item: SessionModel,
 		userId?: number,
 	): Promise<SessionModel> {
@@ -34,7 +34,7 @@ export class SessionController extends BaseController<SessionModel> {
 		return item;
 	}
 
-	protected override async validateDelete(
+	public override async validateDelete(
 		item: SessionModel,
 		userId?: number,
 	): Promise<SessionModel> {
@@ -49,7 +49,7 @@ export class SessionController extends BaseController<SessionModel> {
 		return item;
 	}
 
-	protected override initializeAdditionalRoutes(): void {
+	public override initializeAdditionalRoutes(): void {
 		this.router.post(
 			`/send-verification-email`,
 			this.sendVerificationEmail.bind(this),

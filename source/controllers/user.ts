@@ -9,7 +9,7 @@ export class UserController extends BaseController<UserModel> {
 		});
 	}
 
-	protected override async validateGet(
+	public override async validateGet(
 		item: UserModel,
 		userId?: number,
 	): Promise<UserModel> {
@@ -24,7 +24,7 @@ export class UserController extends BaseController<UserModel> {
 		return item;
 	}
 
-	protected override async validatePut(
+	public override async validatePut(
 		existingItem: UserModel,
 		newItem: Partial<UserModel>,
 		userId?: number,
@@ -50,7 +50,7 @@ export class UserController extends BaseController<UserModel> {
 		return newItem;
 	}
 
-	protected override async validateDelete(
+	public override async validateDelete(
 		item: UserModel,
 		userId?: number,
 	): Promise<UserModel> {

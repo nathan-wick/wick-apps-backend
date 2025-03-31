@@ -34,6 +34,9 @@
 		"max-lines": "off",
 		"no-new": "off",
 		"no-nested-ternary": "off",
-		"no-undefined": "off"
+		"no-undefined": "off",
+		"no-invalid-this": "off",
+		"no-continue": "off",
+		"no-param-reassign": "off"
 	}
 }

@@ -7,7 +7,7 @@ export class PreferencesController extends BaseController<PreferencesModel> {
 		super(PreferencesModel);
 	}
 
-	protected override async validateGet(
+	public override async validateGet(
 		item: PreferencesModel,
 		userId?: number,
 	): Promise<PreferencesModel> {
@@ -22,7 +22,7 @@ export class PreferencesController extends BaseController<PreferencesModel> {
 		return item;
 	}
 
-	protected override async validatePost(
+	public override async validatePost(
 		item: PreferencesModel,
 		userId?: number,
 	): Promise<PreferencesModel> {
@@ -37,7 +37,7 @@ export class PreferencesController extends BaseController<PreferencesModel> {
 		return item;
 	}
 
-	protected override async validatePut(
+	public override async validatePut(
 		existingItem: PreferencesModel,
 		newItem: Partial<PreferencesModel>,
 		userId?: number,
@@ -53,7 +53,7 @@ export class PreferencesController extends BaseController<PreferencesModel> {
 		return newItem;
 	}
 
-	protected override async validateDelete(
+	public override async validateDelete(
 		item: PreferencesModel,
 		userId?: number,
 	): Promise<PreferencesModel> {

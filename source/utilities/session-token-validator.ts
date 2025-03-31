@@ -20,9 +20,7 @@ export default class SessionTokenValidator {
 			next: NextFunction,
 		) => {
 			try {
-				const codedSessionToken = String(
-					request.header(`Session-Token`),
-				);
+				const codedSessionToken = request.header(`Session-Token`);
 				if (!codedSessionToken) {
 					// eslint-disable-next-line no-undefined
 					request.validatedSession = undefined;
