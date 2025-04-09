@@ -1,9 +1,16 @@
-import { Model, ModelAttributeColumnOptions, ModelStatic } from 'sequelize';
+import {
+	BelongsTo,
+	HasMany,
+	HasOne,
+	Model,
+	ModelAttributeColumnOptions,
+	ModelStatic,
+} from 'sequelize';
 
 export abstract class DatabaseHelper {
-    /**
-     * Creates a fully populated test model instance with associations.
-     */
+	/**
+	 * Creates, saves, and returns a fully populated test object with associations.
+	 */
 	public static async createTestObject<TestObjectType extends Model>(
 		model: ModelStatic<TestObjectType>,
 		createdModels: Map<string, any> = new Map(),
@@ -13,171 +20,113 @@ export abstract class DatabaseHelper {
 		if (depth > maxDepth) {
 			return null as any;
 		}
-		if (createdModels.has(model.name)) {
-			return createdModels.get(model.name);
-		}
-		const { initialTestObject, optionalAttributes } =
-			await this.buildInitialTestObject(
-				model,
-				createdModels,
-				depth,
-				maxDepth,
-			);
-        let testObject!: TestObjectType;
-        try {
-            testObject = await model.create(initialTestObject);
-        } catch (error) {
-            // eslint-disable-next-line no-console
-            console.warn(error);
-        }
-		createdModels.set(model.name, testObject);
-        const updates = {
-            ...this.getTestObjectAssociationValues(
-                model,
-                testObject,
-                createdModels,
-                depth,
-                maxDepth,
-            ),
-            ...this.getTestObjectOptionalValues(model, optionalAttributes),
-        };
-		if (Object.keys(updates).length > 0) {
-			await testObject.update(updates);
-		}
-		await testObject.reload({ include: Object.values(model.associations) });
-		return testObject;
-	}
 
-	private static async buildInitialTestObject<TestObjectType extends Model>(
-		model: ModelStatic<TestObjectType>,
-		createdModels: Map<string, any>,
-		depth: number,
-		maxDepth: number,
-	): Promise<{
-		initialTestObject: any;
-		optionalAttributes: Map<
-			string,
-			ModelAttributeColumnOptions<Model<any, any>>
-		>;
-	}> {
 		const initialTestObject: any = {};
-		const optionalAttributes = new Map<
-			string,
-			ModelAttributeColumnOptions<Model<any, any>>
-		>();
+
 		for (const [key, attribute] of Object.entries(model.getAttributes())) {
 			const foreignKeyAssociation = Object.values(
 				model.associations,
 			).find((association) => association.foreignKey === key);
-			if (
-				foreignKeyAssociation &&
-				foreignKeyAssociation.associationType === `BelongsTo`
-			) {
-				const targetInstance =
-					createdModels.get(foreignKeyAssociation.target.name) ??
+			const attributeIsBelongsAssociation: boolean =
+				foreignKeyAssociation?.associationType === BelongsTo.name;
+
+			if (attributeIsBelongsAssociation) {
+				const associatedObject =
+					createdModels.get(foreignKeyAssociation!.target.name) ??
 					(await this.createTestObject(
-						foreignKeyAssociation.target,
+						foreignKeyAssociation!.target,
 						createdModels,
 						depth + 1,
 						maxDepth,
 					));
-				initialTestObject[key] = targetInstance.get(
-					foreignKeyAssociation.target.primaryKeyAttribute,
+
+				initialTestObject[key] = associatedObject.get(
+					foreignKeyAssociation!.target.primaryKeyAttribute,
 				);
 			} else if (attribute.autoIncrement) {
 				continue;
-			} else if (
-				!attribute.allowNull &&
-				attribute.defaultValue === undefined
-			) {
+			} else if (!foreignKeyAssociation) {
 				initialTestObject[key] = this.createTestValue(attribute);
-			} else {
-				optionalAttributes.set(key, attribute);
 			}
 		}
-		return {
-			initialTestObject,
-			optionalAttributes,
-		};
-	}
 
-	private static async getTestObjectOptionalValues<
-		TestObjectType extends Model,
-	>(
-		model: ModelStatic<TestObjectType>,
-		optionalAttributes: Map<
-			string,
-			ModelAttributeColumnOptions<Model<any, any>>
-		>,
-	): Promise<Record<string, any>> {
-		const testObjectOptionalValues: Record<string, any> = {};
-		for (const [key, attribute] of optionalAttributes.entries()) {
-			const isForeignKey = Object.values(model.associations).some(
-				(association) => association.foreignKey === key,
-			);
-			if (!isForeignKey) {
-				testObjectOptionalValues[key] = this.createTestValue(attribute);
-			}
+        const testObject = await model.create(initialTestObject, { hooks: false });
+		createdModels.set(model.name, testObject);
+
+		if (depth === maxDepth) {
+			await testObject.reload({
+				include: Object.values(model.associations),
+			});
+
+			return testObject;
 		}
-		return testObjectOptionalValues;
-	}
 
-	private static async getTestObjectAssociationValues<
-		TestObjectType extends Model,
-	>(
-		model: ModelStatic<TestObjectType>,
-		createdInstance: TestObjectType,
-		createdModels: Map<string, any>,
-		depth: number,
-		maxDepth: number,
-	): Promise<Record<string, any>> {
-		const testObjectAssociationValues: Record<string, any> = {};
-		for (const [associationName, association] of Object.entries(
+		const associationAttributesToUpdate = Object.entries(
 			model.associations,
-		)) {
+		).filter(([, association]) => {
 			const wouldCreateCircularDependency = createdModels.has(
 				association.target.name,
 			);
+
 			if (wouldCreateCircularDependency) {
-				continue;
+				return false;
 			}
-			if (association.target) {
-				if (
-					association.associationType === `HasOne` ||
-					association.associationType === `HasMany`
-				) {
-					const foreignKeyObject: any = {};
-					foreignKeyObject[association.foreignKey] =
-						createdInstance.get(model.primaryKeyAttribute);
-					const isForeignKeyPrimaryKey =
-						association.foreignKey ===
-						association.target.primaryKeyAttribute;
-					if (isForeignKeyPrimaryKey) {
-						const existingRecord =
-							await association.target.findByPk(
-								`${createdInstance.get(model.primaryKeyAttribute)}`,
-							);
-						// eslint-disable-next-line max-depth
-						if (existingRecord) {
-							testObjectAssociationValues[associationName] =
-								existingRecord;
-							continue;
-						}
-					}
-					const testAssociatedObject = await this.createTestObject(
-						association.target,
-						createdModels,
-						depth + 1,
-						maxDepth,
+
+			const isHasAssociation =
+				association.associationType === HasOne.name ||
+				association.associationType === HasMany.name;
+
+			if (!isHasAssociation) {
+				return false;
+			}
+
+			return true;
+		});
+		const associationAttributeUpdateValues: Record<string, any> = {};
+
+		for (const [
+			associationName,
+			association,
+		] of associationAttributesToUpdate) {
+			const isForeignKeyPrimaryKey =
+				association.foreignKey ===
+				association.target.primaryKeyAttribute;
+
+			if (isForeignKeyPrimaryKey) {
+				const existingAssociatedObject =
+					await association.target.findByPk(
+						`${testObject.get(model.primaryKeyAttribute)}`,
 					);
-					if (testAssociatedObject) {
-						testObjectAssociationValues[associationName] =
-							testAssociatedObject;
-					}
+
+				if (existingAssociatedObject) {
+					associationAttributeUpdateValues[associationName] =
+						existingAssociatedObject;
+					continue;
 				}
 			}
+
+			const newAssociatedObject = await this.createTestObject(
+				association.target,
+				createdModels,
+				depth + 1,
+				maxDepth,
+			);
+
+			if (newAssociatedObject) {
+				associationAttributeUpdateValues[associationName] =
+					newAssociatedObject;
+			}
 		}
-		return testObjectAssociationValues;
+
+		if (Object.keys(associationAttributeUpdateValues).length > 0) {
+			await testObject.update(associationAttributeUpdateValues, { hooks: false });
+		}
+
+		await testObject.reload({
+			include: Object.values(model.associations),
+		});
+
+		return testObject;
 	}
 
 	private static createTestValue(

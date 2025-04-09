@@ -30,7 +30,8 @@ export default class RateLimiter {
 	private requestData: Map<string, RequestData> = new Map();
 	private blockedKeys: Map<string, number> = new Map();
 	private suspiciousKeys: Map<string, number> = new Map();
-	private cleanupInterval: NodeJS.Timeout;
+	private cleanupInterval: NodeJS.Timeout | null = null;
+	private serverLoadMonitor: NodeJS.Timeout | null = null;
 	private serverLoad: number = 0;
 
 	constructor(
@@ -47,12 +48,6 @@ export default class RateLimiter {
 		},
 	) {
 		this.options = options;
-		this.cleanupInterval = this.startCleanup(
-			this.options.cleanupIntervalInMinutes,
-		);
-		if (this.options.autoScaleLimits) {
-			this.monitorServerLoad();
-		}
 	}
 
 	public middleware() {
@@ -187,9 +182,19 @@ export default class RateLimiter {
 		return false;
 	}
 
-	public dispose(): void {
+	public startOpenHandles(): void {
+		this.cleanupInterval = this.startCleanup(
+			this.options.cleanupIntervalInMinutes,
+		);
+		this.serverLoadMonitor = this.monitorServerLoad();
+	}
+
+	public stopOpenHandles(): void {
 		if (this.cleanupInterval) {
 			clearInterval(this.cleanupInterval);
+		}
+		if (this.serverLoadMonitor) {
+			clearInterval(this.serverLoadMonitor);
 		}
 	}
 
@@ -258,9 +263,13 @@ export default class RateLimiter {
 		}
 	}
 
-	private monitorServerLoad(): void {
+	private monitorServerLoad(): NodeJS.Timeout | null {
+		if (!this.options.autoScaleLimits) {
+			return null;
+		}
+
 		try {
-			setInterval(() => {
+			return setInterval(() => {
 				if (typeof process !== `undefined` && process.cpuUsage) {
 					const startUsage = process.cpuUsage();
 					setTimeout(() => {
@@ -272,6 +281,7 @@ export default class RateLimiter {
 			}, 5000);
 		} catch (error) {
 			this.serverLoad = 0;
+			return null;
 		}
 	}
 }

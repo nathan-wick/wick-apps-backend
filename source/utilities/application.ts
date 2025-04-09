@@ -11,6 +11,7 @@ import { BaseController } from '../controllers/base';
 import { DashboardConfigurationController } from '../controllers/dashboard-configuration';
 import type { HttpStatus } from '../interfaces/http-status';
 import { PreferencesController } from '../controllers/preferences';
+import RateLimiter from './rate-limiter';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index';
 import { Sequelize } from 'sequelize';
 import { SessionController } from '../controllers/session';
@@ -20,12 +21,10 @@ import express from 'express';
 import { largeFileBytes } from '../constants/file-sizes';
 import { mainRouter } from '../constants/main-router';
 import nodemailer from 'nodemailer';
-import { rateLimiter } from '../constants/rate-limiter';
 import sendErrorResponse from './send-error-response';
 import { sessionTokenValidator } from '../constants/session-token-validator';
 
 export interface ApplicationConfiguration {
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	controllers: BaseController<any>[];
 	cors: {
 		optionsSuccessStatus: number;
@@ -53,11 +52,13 @@ export let emailTransporter: nodemailer.Transporter<
 export class Application {
 	public express: express.Application;
 	private configuration: ApplicationConfiguration;
+	private rateLimiter: RateLimiter;
 	private server?: ReturnType<typeof this.express.listen>;
 
 	constructor(configuration: ApplicationConfiguration) {
 		this.express = express();
 		this.configuration = configuration;
+		this.rateLimiter = new RateLimiter();
 	}
 
 	public async start() {
@@ -68,6 +69,9 @@ export class Application {
 			this.initializeAssociations();
 			this.initializeControllers();
 			await this.initializeDatabase();
+			if (this.configuration.enableRateLimiter) {
+				this.rateLimiter.startOpenHandles();
+			}
 			this.initializeExpress();
 			console.log(`Application started.`);
 		} catch (error) {
@@ -79,6 +83,9 @@ export class Application {
 		try {
 			console.log(`Stopping application...`);
 			await database.close();
+			if (this.configuration.enableRateLimiter) {
+				this.rateLimiter.stopOpenHandles();
+			}
 			this.server?.close();
 			console.log(`Application stopped.`);
 		} catch (error) {
@@ -133,7 +140,7 @@ export class Application {
 			}),
 		);
 		if (this.configuration.enableRateLimiter) {
-			this.express.use(rateLimiter.middleware());
+			this.express.use(this.rateLimiter.middleware());
 		}
 		this.express.use(sessionTokenValidator.middleware());
 		this.express.use(mainRouter);
