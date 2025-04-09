@@ -7,7 +7,6 @@ import SessionModel from '../models/session';
 import { Shield } from '../utilities/shield';
 import UserModel from '../models/user';
 import { applicationConfiguration } from '../utilities/application';
-import { emailer } from '../constants/emailer';
 import sendErrorResponse from '../utilities/send-error-response';
 import { sessionTokenValidator } from '../constants/session-token-validator';
 
@@ -91,7 +90,7 @@ export class SessionController extends BaseController<SessionModel> {
 				successfulAttempts: 0,
 				userId: user.id,
 			});
-			await emailer.send({
+			await Emailer.send({
 				subject: `Verification Code`,
 				text: `${code} is your verification code to sign into ${applicationConfiguration.name}.
 

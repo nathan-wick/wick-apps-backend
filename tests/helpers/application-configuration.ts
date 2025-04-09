@@ -13,6 +13,7 @@ export const testApplicationConfiguration: ApplicationConfiguration = {
 		password: `password`,
 		port: 587,
 	},
-	name: `TestApp`,
-	port: 3000,
+	enableRateLimiter: true,
+	name: `Test App`,
+	port: null,
 };

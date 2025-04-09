@@ -6,9 +6,9 @@ import {
 	Model,
 	Sequelize,
 } from 'sequelize';
-import DashboardConfiguration from './dashboard-configuration';
-import Preferences from './preferences';
-import Session from './session';
+import DashboardConfigurationModel from './dashboard-configuration';
+import PreferencesModel from './preferences';
+import SessionModel from './session';
 
 export class UserModel extends Model<
 	InferAttributes<UserModel>,
@@ -21,9 +21,9 @@ export class UserModel extends Model<
 	declare lastName: string | null;
 	declare birthday: Date | null;
 
-	declare sessions?: Session[];
-	declare preferences?: Preferences;
-	declare dashboardConfigurations?: DashboardConfiguration[];
+	declare sessions?: SessionModel[];
+	declare preferences?: PreferencesModel;
+	declare dashboardConfigurations?: DashboardConfigurationModel[];
 }
 
 export const initializeUserModel = (sequelize: Sequelize) => {
@@ -62,7 +62,7 @@ export const initializeUserModel = (sequelize: Sequelize) => {
 		{
 			hooks: {
 				afterCreate: async (user: UserModel) => {
-					await Preferences.create({
+					await PreferencesModel.create({
 						brightness: `system`,
 						dateFormat: `YYYY/MM/DD`,
 						primaryColor: `default`,
@@ -73,24 +73,6 @@ export const initializeUserModel = (sequelize: Sequelize) => {
 			sequelize,
 		},
 	);
-
-	UserModel.hasMany(Session, {
-		as: `sessions`,
-		foreignKey: `userId`,
-		onDelete: `CASCADE`,
-	});
-
-	UserModel.hasOne(Preferences, {
-		as: `preferences`,
-		foreignKey: `userId`,
-		onDelete: `CASCADE`,
-	});
-
-	UserModel.hasMany(DashboardConfiguration, {
-		as: `dashboardConfigurations`,
-		foreignKey: `userId`,
-		onDelete: `CASCADE`,
-	});
 };
 
 export default UserModel;

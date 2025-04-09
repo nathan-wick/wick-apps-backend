@@ -1,5 +1,6 @@
 import { Application, BaseController, UserModel } from '../../source';
-import { Model } from 'sequelize';
+import { Model, ModelStatic } from 'sequelize';
+import { DatabaseHelper } from './database';
 import { SessionHelper } from './session';
 import request from 'supertest';
 import { testApplicationConfiguration } from './application-configuration';
@@ -7,85 +8,32 @@ import { testApplicationConfiguration } from './application-configuration';
 export abstract class BaseControllerTest<Type extends Model> {
 	protected readonly controller: BaseController<Type>;
 	protected readonly application: Application;
-	protected testItems!: Type[];
+	protected testObjects: Type[] = [];
 	protected testUser!: UserModel;
 	// eslint-disable-next-line quotes
 	protected testUserSessionTokenHeader!: { 'Session-Token': string };
 
 	constructor(Controller: new (...args: unknown[]) => BaseController<Type>) {
 		this.controller = new Controller();
-		this.application = new Application(testApplicationConfiguration);
+		this.application = new Application({
+			...testApplicationConfiguration,
+			enableRateLimiter: false,
+		});
 	}
 
-	public async setupTestEnvironment() {
+	public async setupTestEnvironment(numberOfTestObjects: number = 5) {
 		await this.application.start();
-		this.testItems = await this.controller.model.bulkCreate(
-			await this.createTestData<Type>(5),
-		);
-		this.testUser = await UserModel.create(
-			(await this.createTestData<UserModel>(1))[0],
-		);
+		for (let index: number = 0; index < numberOfTestObjects; index++) {
+			this.testObjects.push(
+				await DatabaseHelper.createTestObject(this.controller.model),
+			);
+		}
+		this.testUser = await DatabaseHelper.createTestObject(UserModel);
 		this.testUserSessionTokenHeader = {
 			'Session-Token': await SessionHelper.createTestSession(
 				this.testUser,
 			),
 		};
-	}
-
-	private async createTestData<TestDataType extends Model>(
-		numberOfItems: number,
-	): Promise<
-		(Partial<TestDataType> & TestDataType[`_creationAttributes`])[]
-	> {
-		const items: Array<
-			Partial<TestDataType> & TestDataType[`_creationAttributes`]
-		> = [];
-
-		for (let index = 0; index < numberOfItems; index++) {
-			const item: Record<string, unknown> = {};
-
-			for (const [key, attribute] of Object.entries(
-				this.controller.model.getAttributes(),
-			)) {
-				if (attribute.autoIncrement || attribute.primaryKey) {
-					continue;
-				}
-				switch (attribute.type.constructor.name) {
-					case `STRING`:
-						if (key === `email`) {
-							item[key] =
-								`test${Math.random().toString(36).substring(7)}@wickapps.com`;
-							break;
-						}
-						item[key] =
-							`test string ${Math.random().toString(36).substring(7)}`;
-						break;
-					case `INTEGER`:
-						item[key] = Math.floor(Math.random() * 1000);
-						break;
-					case `BOOLEAN`:
-						item[key] = Math.random() < 0.5;
-						break;
-					case `DATE`:
-						item[key] = new Date();
-						break;
-					case `FLOAT`:
-						item[key] = Math.random() * 1000;
-						break;
-					case `TEXT`:
-						item[key] =
-							`test text ${Math.random().toString(36).substring(7)}`;
-						break;
-					default:
-						item[key] = null;
-						break;
-				}
-			}
-
-			items.push(item as Partial<TestDataType>);
-		}
-
-		return items;
 	}
 
 	public async destroyTestEnvironment() {
@@ -105,9 +53,9 @@ export abstract class BaseControllerTest<Type extends Model> {
 
 	private testTestEnvironment() {
 		describe(`test environment`, () => {
-			it(`should have test items`, () => {
-				expect(this.testItems).toBeDefined();
-				expect(this.testItems.length).toBeGreaterThan(0);
+			it(`should have test objects`, () => {
+				expect(this.testObjects).toBeDefined();
+				expect(this.testObjects.length).toBeGreaterThan(0);
 			});
 			it(`should have a test user`, () => {
 				expect(this.testUser).toBeDefined();
@@ -131,65 +79,100 @@ export abstract class BaseControllerTest<Type extends Model> {
 				jest.restoreAllMocks();
 			});
 			if (this.controller.options.enableGet) {
-				// eslint-disable-next-line max-len
-				it(`should ${this.controller.options.allowAnonymousGet ? `allow` : `deny`} anonymous access`, async () => {
-					const testItem = this.getRandomTestItem();
-					const testItemPrimaryKeyValue = testItem.get(
+				const anonymousAccess = this.controller.options
+					.allowAnonymousGet
+					? `allow`
+					: `deny`;
+				it(`should ${anonymousAccess} anonymous access`, async () => {
+					const testObject = this.getRandomTestObject();
+					const testObjectPrimaryKeyValue = testObject.get(
 						this.controller.model.primaryKeyAttribute,
 					);
 					const response = await request(
 						this.application.express,
 					).get(
-						`/${this.controller.kebabCasedTypeName}/${testItemPrimaryKeyValue}`,
+						`/${this.controller.kebabCasedTypeName}/${testObjectPrimaryKeyValue}`,
 					);
 					if (this.controller.options.allowAnonymousGet) {
 						expect(response.status).toBe(200);
 						expect(response.body).toEqual(
-							JSON.parse(JSON.stringify(testItem)),
+							this.jsonDeepClone(testObject),
 						);
 					} else {
 						expect(response.status).toBe(403);
 					}
 				});
 				it(`should return all direct attributes when none are requested`, async () => {
-					const testItem = this.getRandomTestItem();
-					const testItemPrimaryKeyValue = testItem.get(
+					const testObject = this.getRandomTestObject();
+					const testObjectPrimaryKeyValue = testObject.get(
 						this.controller.model.primaryKeyAttribute,
 					);
 					const response = await request(this.application.express)
 						.get(
-							`/${this.controller.kebabCasedTypeName}/${testItemPrimaryKeyValue}`,
+							`/${this.controller.kebabCasedTypeName}/${testObjectPrimaryKeyValue}`,
 						)
 						.set(this.testUserSessionTokenHeader);
 					expect(response.status).toBe(200);
-					expect(Object.keys(response.body)).toEqual(
-						expect.arrayContaining(
-							Object.keys(this.controller.model.getAttributes()),
-						),
+					const expectedItem = this.pickAttributes(
+						testObject.get({ plain: true }),
+						Object.keys(this.controller.model.getAttributes()),
 					);
 					expect(response.body).toEqual(
-						JSON.parse(JSON.stringify(testItem)),
+						this.jsonDeepClone(expectedItem),
 					);
 				});
 				it(`should return only requested attributes`, async () => {
-					const testItem = this.getRandomTestItem();
-					const testItemPrimaryKeyValue = testItem.get(
+					const testObject = this.getRandomTestObject();
+					const testObjectPrimaryKeyValue = testObject.get(
 						this.controller.model.primaryKeyAttribute,
 					);
 					const attributes = this.getRandomAttributes();
 					const response = await request(this.application.express)
 						.get(
-							`/${this.controller.kebabCasedTypeName}/${testItemPrimaryKeyValue}`,
+							`/${this.controller.kebabCasedTypeName}/${testObjectPrimaryKeyValue}`,
 						)
 						.query({ attributes })
 						.set(this.testUserSessionTokenHeader);
 					expect(response.status).toBe(200);
-					expect(Object.keys(response.body)).toEqual(
-						expect.arrayContaining(attributes),
+					const expectedObject = this.pickAttributes(
+						testObject.get({ plain: true }),
+						attributes,
 					);
-					expect(Object.keys(response.body).length).toBe(
-						attributes.length,
+					expect(response.body).toEqual(
+						this.jsonDeepClone(expectedObject),
 					);
+				});
+				it(`should error when an invalid direct attribute is requested`, async () => {
+					const testObject = this.getRandomTestObject();
+					const testObjectPrimaryKeyValue = testObject.get(
+						this.controller.model.primaryKeyAttribute,
+					);
+					const attributes = this.getRandomAttributes();
+					const invalidAttribute = `invalidAttribute`;
+					attributes.push(invalidAttribute);
+					const response = await request(this.application.express)
+						.get(
+							`/${this.controller.kebabCasedTypeName}/${testObjectPrimaryKeyValue}`,
+						)
+						.query({ attributes })
+						.set(this.testUserSessionTokenHeader);
+					expect(response.status).toBe(400);
+				});
+				it(`should error when an invalid nested attribute is requested`, async () => {
+					const testObject = this.getRandomTestObject();
+					const testObjectPrimaryKeyValue = testObject.get(
+						this.controller.model.primaryKeyAttribute,
+					);
+					const attributes = this.getRandomAttributes();
+					const invalidAttribute = `${attributes[0]}.invalidAttribute`;
+					attributes.push(invalidAttribute);
+					const response = await request(this.application.express)
+						.get(
+							`/${this.controller.kebabCasedTypeName}/${testObjectPrimaryKeyValue}`,
+						)
+						.query({ attributes })
+						.set(this.testUserSessionTokenHeader);
+					expect(response.status).toBe(400);
 				});
 				it(`should error when a negative primary key is given`, async () => {
 					const invalidPrimaryKey = -1;
@@ -221,14 +204,14 @@ export abstract class BaseControllerTest<Type extends Model> {
 				});
 			} else {
 				it(`should not find endpoints`, async () => {
-					const testItemPrimaryKeyValue =
-						this.getRandomTestItem().get(
+					const testObjectPrimaryKeyValue =
+						this.getRandomTestObject().get(
 							this.controller.model.primaryKeyAttribute,
 						);
 					const response = await request(
 						this.application.express,
 					).get(
-						`/${this.controller.kebabCasedTypeName}/${testItemPrimaryKeyValue}`,
+						`/${this.controller.kebabCasedTypeName}/${testObjectPrimaryKeyValue}`,
 					);
 					expect(response.status).toBe(404);
 				});
@@ -236,22 +219,31 @@ export abstract class BaseControllerTest<Type extends Model> {
 		});
 	}
 
-	private getRandomTestItem(): Type {
-		if (!this.testItems || this.testItems.length === 0) {
-			throw `At least one test item must be defined.`;
+	public getRandomTestObject(): Type {
+		if (!this.testObjects || this.testObjects.length === 0) {
+			throw `At least one test object must be defined.`;
 		}
-		const randomIndex = Math.floor(Math.random() * this.testItems.length);
-		const testItem = this.testItems[randomIndex];
-		if (!testItem) {
-			throw `Failed to retrieve a valid test item at index ${randomIndex}.`;
+		const randomIndex = Math.floor(Math.random() * this.testObjects.length);
+		const testObject = this.testObjects[randomIndex];
+		if (!testObject) {
+			throw `Failed to retrieve a valid test object at index ${randomIndex}.`;
 		}
-		return testItem;
+		return testObject;
 	}
 
-	private getRandomAttributes(): string[] {
-		const allAttributes = Object.keys(
-			this.controller.model.getAttributes(),
-		);
+	public getRandomAttributes(
+		model: ModelStatic<any> = this.controller.model,
+	) {
+		return [
+			...this.getRandomDirectAttributes(model),
+			...this.getRandomNestedAttributes(model),
+		];
+	}
+
+	public getRandomDirectAttributes(
+		model: ModelStatic<any> = this.controller.model,
+	): string[] {
+		const allAttributes = Object.keys(model.getAttributes());
 		const minimumNumberOfAttributesToGet = 1;
 		const randomNumberOfAttributesToGet =
 			Math.floor(
@@ -262,5 +254,69 @@ export abstract class BaseControllerTest<Type extends Model> {
 			.sort(() => 0.5 - Math.random())
 			.slice(0, randomNumberOfAttributesToGet);
 		return randomAttributes;
+	}
+
+	public getRandomNestedAttributes(
+		model: ModelStatic<any> = this.controller.model,
+	): string[] {
+		const { associations } = model;
+		const nestedAttributes: string[] = [];
+		Object.entries(associations).forEach(
+			([associationName, association]) => {
+				const associatedModel = association.target;
+				const attributes =
+					this.getRandomDirectAttributes(associatedModel);
+				attributes.forEach((attribute) => {
+					nestedAttributes.push(`${associationName}.${attribute}`);
+				});
+			},
+		);
+		return nestedAttributes.sort(() => Math.random() - 0.5);
+	}
+
+	public pickAttributes(object: any, attributes: string[]): any {
+		if (!object || !attributes) {
+			return object;
+		}
+		if (Array.isArray(object)) {
+			return object.map((element) =>
+				this.pickAttributes(element, attributes),
+			);
+		}
+		const result: any = {};
+		const attributeGroups: Record<string, string[]> = {};
+		attributes.forEach((attribute) => {
+			const [directAttribute, ...nestedAttributes] = attribute.split(`.`);
+			const remainingPath = nestedAttributes.join(`.`);
+			if (!directAttribute) {
+				throw `Attribute path ${attribute} must have a direct attribute.`;
+			}
+			if (!attributeGroups[directAttribute]) {
+				attributeGroups[directAttribute] = [];
+			}
+			if (remainingPath) {
+				attributeGroups[directAttribute].push(remainingPath);
+			}
+		});
+		Object.keys(attributeGroups).forEach((key) => {
+			if (!(key in object)) {
+				return;
+			}
+			const nestedAttributes = attributeGroups[key];
+			if (nestedAttributes?.length) {
+				const value = this.pickAttributes(
+					object[key],
+					nestedAttributes,
+				);
+				result[key] = value;
+			} else {
+				result[key] = object[key];
+			}
+		});
+		return result;
+	}
+
+	public jsonDeepClone(object: any) {
+		return JSON.parse(JSON.stringify(object));
 	}
 }

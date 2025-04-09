@@ -1,5 +1,4 @@
 // Constants
-export { emailer } from './constants/emailer';
 export { sessionTokenValidator } from './constants/session-token-validator';
 
 // Controllers
@@ -8,6 +7,9 @@ export {
 	type BaseControllerOptions,
 	defaultOptions,
 } from './controllers/base';
+export { DashboardConfigurationController } from './controllers/dashboard-configuration';
+export { PreferencesController } from './controllers/preferences';
+export { SessionController } from './controllers/session';
 export { UserController } from './controllers/user';
 
 // Models
@@ -22,4 +24,5 @@ export {
 	Application,
 	database,
 } from './utilities/application';
+export { Emailer } from './utilities/emailer';
 export { Shield } from './utilities/shield';

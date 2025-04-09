@@ -276,21 +276,26 @@ export abstract class BaseController<Type extends Model> {
 		if (attributes.length === 0) {
 			return undefined;
 		}
-
 		const directAttributes = attributes.filter(
 			(attribute) => !attribute.includes(`.`),
+		);
+		directAttributes.forEach((directAttribute) =>
+			this.validateAttribute(this.model, directAttribute),
 		);
 		const nestedAttributes = attributes.filter((attribute) =>
 			attribute.includes(`.`),
 		);
 		return {
 			attributes: directAttributes,
-			include: this.buildIncludeables(nestedAttributes),
+			include: this.buildIncludeables(this.model, nestedAttributes),
 			rejectOnEmpty: false,
 		};
 	}
 
-	private buildIncludeables(attributes: string[]): Includeable[] {
+	private buildIncludeables(
+		model: ModelStatic<any>,
+		attributes: string[],
+	): Includeable[] {
 		const includeMap = new Map<string, string[]>();
 		attributes.forEach((attribute) => {
 			const parts = attribute.split(`.`);
@@ -304,13 +309,46 @@ export abstract class BaseController<Type extends Model> {
 			}
 			includeMap.get(parent)!.push(child);
 		});
-		return Array.from(includeMap.entries()).map(([parent, children]) => ({
-			as: parent,
-			attributes: children.filter((child) => !child.includes(`.`)),
-			include: this.buildIncludeables(
-				children.filter((child) => child.includes(`.`)),
-			),
-			model: database.models[parent],
-		}));
+		return Array.from(includeMap.entries()).map(([parent, children]) => {
+			const association = this.model.associations[parent];
+			if (!association) {
+				throw {
+					code: 400,
+					message: `'${parent}' is not related to '${model.name}'.`,
+				};
+			}
+			const parentModel = association.target;
+			const directAttributes = children.filter(
+				(child) => !child.includes(`.`),
+			);
+			directAttributes.forEach((directAttribute) =>
+				this.validateAttribute(parentModel, directAttribute),
+			);
+			const nestedAttributes = children.filter((child) =>
+				child.includes(`.`),
+			);
+			return {
+				as: parent,
+				attributes: children.filter((child) => !child.includes(`.`)),
+				include: this.buildIncludeables(parentModel, nestedAttributes),
+				model: parentModel,
+			};
+		});
+	}
+
+	private validateAttribute(model: ModelStatic<any>, attribute: string) {
+		if (!Object.keys(model.getAttributes()).includes(attribute)) {
+			const modelName = model.name
+				.replace(
+					/(?<lowercase>[a-z])(?<uppercase>[A-Z])/gu,
+					`$<lowercase> $<uppercase>`,
+				)
+				.replace(/-model$/u, ``);
+			const error: HttpStatus = {
+				code: 400,
+				message: `${modelName} does not have an attribute named ${attribute}.`,
+			};
+			throw error;
+		}
 	}
 }

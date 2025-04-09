@@ -8,8 +8,8 @@ export interface EmailOptions {
 	html?: string;
 }
 
-export class Emailer {
-	public async send(options: EmailOptions): Promise<void> {
+export abstract class Emailer {
+	public static async send(options: EmailOptions): Promise<void> {
 		if (!Emailer.addressIsValid(options.to)) {
 			const error: HttpStatus = {
 				code: 400,

@@ -10,7 +10,7 @@
 				"code": 120
 			}
 		],
-		"max-params": ["warn", 4],
+		"max-params": ["warn", 6],
 		"max-statements": "off",
 		"new-cap": "off",
 		"no-console": "warn",
@@ -37,6 +37,9 @@
 		"no-undefined": "off",
 		"no-invalid-this": "off",
 		"no-continue": "off",
-		"no-param-reassign": "off"
+		"no-param-reassign": "off",
+		"@typescript-eslint/no-explicit-any": "off",
+		"no-await-in-loop": "off",
+		"no-case-declarations": "off"
 	}
 }

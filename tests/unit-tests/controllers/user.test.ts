@@ -8,6 +8,5 @@ export class UserControllerTest extends BaseControllerTest<UserModel> {
 }
 
 describe(`User Controller`, () => {
-	const userControllerTest = new UserControllerTest();
-	userControllerTest.registerTests();
+	new UserControllerTest().registerTests();
 });

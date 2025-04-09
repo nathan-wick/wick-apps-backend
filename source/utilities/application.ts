@@ -1,4 +1,12 @@
 /* eslint-disable no-console */
+import DashboardConfigurationModel, {
+	initializeDashboardConfigurationModel,
+} from '../models/dashboard-configuration';
+import PreferencesModel, {
+	initializePreferencesModel,
+} from '../models/preferences';
+import SessionModel, { initializeSessionModel } from '../models/session';
+import UserModel, { initializeUserModel } from '../models/user';
 import { BaseController } from '../controllers/base';
 import { DashboardConfigurationController } from '../controllers/dashboard-configuration';
 import type { HttpStatus } from '../interfaces/http-status';
@@ -9,10 +17,6 @@ import { SessionController } from '../controllers/session';
 import { UserController } from '../controllers/user';
 import cors from 'cors';
 import express from 'express';
-import { initializeDashboardConfigurationModel } from '../models/dashboard-configuration';
-import { initializePreferencesModel } from '../models/preferences';
-import { initializeSessionModel } from '../models/session';
-import { initializeUserModel } from '../models/user';
 import { largeFileBytes } from '../constants/file-sizes';
 import { mainRouter } from '../constants/main-router';
 import nodemailer from 'nodemailer';
@@ -21,21 +25,22 @@ import sendErrorResponse from './send-error-response';
 import { sessionTokenValidator } from '../constants/session-token-validator';
 
 export interface ApplicationConfiguration {
-	name: string;
-	database: { uri: string };
-	port: number;
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	controllers: BaseController<any>[];
+	cors: {
+		optionsSuccessStatus: number;
+		origin: boolean;
+	};
+	database: { uri: string };
 	email: {
 		host: string;
 		port: number;
 		fromAddress: string;
 		password: string;
 	};
-	cors: {
-		optionsSuccessStatus: number;
-		origin: boolean;
-	};
+	enableRateLimiter: boolean;
+	name: string;
+	port: number | null;
 }
 
 export let applicationConfiguration: ApplicationConfiguration;
@@ -60,6 +65,7 @@ export class Application {
 			console.log(`Starting application...`);
 			this.initializeGlobalVariables();
 			this.initializeModels();
+			this.initializeAssociations();
 			this.initializeControllers();
 			await this.initializeDatabase();
 			this.initializeExpress();
@@ -126,7 +132,9 @@ export class Application {
 				limit: largeFileBytes,
 			}),
 		);
-		this.express.use(rateLimiter.middleware());
+		if (this.configuration.enableRateLimiter) {
+			this.express.use(rateLimiter.middleware());
+		}
 		this.express.use(sessionTokenValidator.middleware());
 		this.express.use(mainRouter);
 		this.express.use(
@@ -139,6 +147,38 @@ export class Application {
 			},
 		);
 		this.express.disable(`x-powered-by`);
-		this.server = this.express.listen(this.configuration.port);
+		if (this.configuration.port) {
+			this.server = this.express.listen(this.configuration.port);
+		}
+	}
+
+	private initializeAssociations() {
+		DashboardConfigurationModel.belongsTo(UserModel, {
+			as: `user`,
+			foreignKey: `userId`,
+		});
+		PreferencesModel.belongsTo(UserModel, {
+			as: `user`,
+			foreignKey: `userId`,
+		});
+		SessionModel.belongsTo(UserModel, {
+			as: `user`,
+			foreignKey: `userId`,
+		});
+		UserModel.hasMany(SessionModel, {
+			as: `sessions`,
+			foreignKey: `userId`,
+			onDelete: `CASCADE`,
+		});
+		UserModel.hasOne(PreferencesModel, {
+			as: `preferences`,
+			foreignKey: `userId`,
+			onDelete: `CASCADE`,
+		});
+		UserModel.hasMany(DashboardConfigurationModel, {
+			as: `dashboardConfigurations`,
+			foreignKey: `userId`,
+			onDelete: `CASCADE`,
+		});
 	}
 }
