@@ -1,14 +1,14 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
 	type Attributes,
 	type Includeable,
 	type Model,
 	type ModelStatic,
 	type NonNullFindOptions,
+	Op,
+	WhereOptions,
 } from 'sequelize';
 import { type Request, type Response, Router } from 'express';
 import type { HttpStatus } from '../interfaces/http-status';
-import { database } from '../utilities/application';
 import { mainRouter } from '../constants/main-router';
 import sendErrorResponse from '../utilities/send-error-response';
 
@@ -71,35 +71,42 @@ export abstract class BaseController<Type extends Model> {
 		this.initializeRoutes();
 	}
 
-	public async validateGet(item: Type, userId?: number): Promise<Type> {
-		return item;
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	public async validateGet(instance: Type, userId?: number): Promise<Type> {
+		return instance;
 	}
 
-	public async validatePost(item: Type, userId?: number): Promise<Type> {
-		return item;
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	public async validatePost(instance: Type, userId?: number): Promise<Type> {
+		return instance;
 	}
 
 	public async validatePut(
-		existingItem: Type,
-		newItem: Partial<Type>,
+		existingInstance: Type,
+		newInstance: Partial<Type>,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		userId?: number,
 	): Promise<Partial<Type>> {
-		return newItem;
+		return newInstance;
 	}
 
-	public async validateDelete(item: Type, userId?: number): Promise<Type> {
-		return item;
+	public async validateDelete(
+		instance: Type,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		userId?: number,
+	): Promise<Type> {
+		return instance;
 	}
 
 	protected initializeAdditionalRoutes(): void {}
 
-	private async get(request: Request, response: Response) {
+	private async getByPrimaryKey(request: Request, response: Response) {
 		try {
 			const userId = request.validatedSession?.userId;
 			if (!userId && !this.options.allowAnonymousGet) {
 				const error: HttpStatus = {
 					code: 403,
-					message: `Please sign in to get a ${this.titleCasedTypeName}.`,
+					message: `Please sign in to get ${this.titleCasedTypeName}.`,
 				};
 				throw error;
 			}
@@ -111,24 +118,97 @@ export abstract class BaseController<Type extends Model> {
 				};
 				throw error;
 			}
-			const requestedAttributes = request.query.attributes
+			const attributes = request.query.attributes
 				? Array.isArray(request.query.attributes)
 					? (request.query.attributes as string[])
 					: [request.query.attributes as string]
 				: [];
-			const item = await this.model.findByPk(
+			const instance = await this.model.findByPk(
 				primaryKey,
-				this.getFindOptions(requestedAttributes),
+				this.getFindOptions(attributes),
 			);
-			if (!item) {
+			if (!instance) {
 				const error: HttpStatus = {
 					code: 404,
 					message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${primaryKey} not found.`,
 				};
 				throw error;
 			}
-			const validatedItem = await this.validateGet(item, userId);
-			response.status(200).send(validatedItem);
+			const validatedInstance = await this.validateGet(instance, userId);
+			response.status(200).send(validatedInstance);
+		} catch (error) {
+			sendErrorResponse(response, error as HttpStatus);
+		}
+	}
+
+	private async get(request: Request, response: Response) {
+		try {
+			const userId = request.validatedSession?.userId;
+			if (!userId && !this.options.allowAnonymousGet) {
+				const error: HttpStatus = {
+					code: 403,
+					message: `Please sign in to get ${this.titleCasedTypeName}.`,
+				};
+				throw error;
+			}
+			const minimumPageSize = 1;
+			const maximumPageSize = 100;
+			const pageSize = Number(request.query.pageSize ?? maximumPageSize);
+			if (pageSize < minimumPageSize) {
+				const error: HttpStatus = {
+					code: 400,
+					message: `Page size cannot be less than ${minimumPageSize}.`,
+				};
+				throw error;
+			}
+			if (pageSize > maximumPageSize) {
+				const error: HttpStatus = {
+					code: 400,
+					message: `Page size cannot be greater than ${maximumPageSize}.`,
+				};
+				throw error;
+			}
+			const firstPage = 1;
+			const pageNumber = Number(request.query.pageNumber ?? firstPage);
+			if (pageNumber < firstPage) {
+				const error: HttpStatus = {
+					code: 400,
+					message: `Page number cannot be less than ${firstPage}.`,
+				};
+				throw error;
+			}
+			const attributes = request.query.attributes
+				? Array.isArray(request.query.attributes)
+					? (request.query.attributes as string[])
+					: [request.query.attributes as string]
+				: [];
+			const where = request.query.where
+				? this.buildWhereOptions(
+						decodeURIComponent(String(request.query.where)),
+					)
+				: undefined;
+			const orderDirection =
+				String(request.query.orderDirection).toUpperCase() === `DESC`
+					? `DESC`
+					: `ASC`;
+			const orderBy = request.query.orderBy
+				? String(request.query.orderBy)
+				: this.model.primaryKeyAttribute;
+			this.validateAttribute(this.model, orderBy);
+			const { count, rows } = await this.model.findAndCountAll({
+				...this.getFindOptions(attributes),
+				limit: pageSize,
+				offset: pageSize * (pageNumber - 1),
+				order: [[orderBy, orderDirection]],
+				where,
+			});
+			const validatedInstances = await Promise.all(
+				rows.map((instance) => this.validateGet(instance, userId)),
+			);
+			response.status(200).send({
+				instances: validatedInstances,
+				totalInstances: count,
+			});
 		} catch (error) {
 			sendErrorResponse(response, error as HttpStatus);
 		}
@@ -144,19 +224,19 @@ export abstract class BaseController<Type extends Model> {
 				};
 				throw error;
 			}
-			const item = request.body;
-			if (!item) {
+			const instance = request.body;
+			if (!instance) {
 				const error: HttpStatus = {
 					code: 400,
 					message: `Invalid ${this.titleCasedTypeName}.`,
 				};
 				throw error;
 			}
-			const validatedItem = await this.validatePost(item, userId);
-			const createdItem = await this.model.create({
-				...validatedItem.dataValues,
+			const validatedInstance = await this.validatePost(instance, userId);
+			const createdInstance = await this.model.create({
+				...validatedInstance.dataValues,
 			});
-			response.status(201).send(createdItem);
+			response.status(201).send(createdInstance);
 		} catch (error) {
 			sendErrorResponse(response, error as HttpStatus);
 		}
@@ -173,47 +253,47 @@ export abstract class BaseController<Type extends Model> {
 				throw error;
 			}
 			const primaryKey = this.model.primaryKeyAttribute;
-			const newItem = request.body;
-			let itemId: number | undefined;
-			if (primaryKey in newItem) {
-				itemId = newItem[this.model.primaryKeyAttribute];
+			const newInstance = request.body;
+			let instanceId: number | undefined;
+			if (primaryKey in newInstance) {
+				instanceId = newInstance[this.model.primaryKeyAttribute];
 			}
-			if (!itemId) {
+			if (!instanceId) {
 				const error: HttpStatus = {
 					code: 400,
 					message: `Missing ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
 				};
 				throw error;
 			}
-			if (itemId < 1) {
+			if (instanceId < 1) {
 				const error: HttpStatus = {
 					code: 400,
 					message: `Invalid ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
 				};
 				throw error;
 			}
-			if (!newItem) {
+			if (!newInstance) {
 				const error: HttpStatus = {
 					code: 400,
 					message: `Missing ${this.titleCasedTypeName}.`,
 				};
 				throw error;
 			}
-			const existingItem = await this.model.findByPk(itemId);
-			if (!existingItem) {
+			const existingInstance = await this.model.findByPk(instanceId);
+			if (!existingInstance) {
 				const error: HttpStatus = {
 					code: 404,
-					message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${itemId} not found.`,
+					message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${instanceId} not found.`,
 				};
 				throw error;
 			}
-			const validatedItem = await this.validatePut(
-				existingItem,
-				newItem,
+			const validatedInstance = await this.validatePut(
+				existingInstance,
+				newInstance,
 				userId,
 			);
-			await existingItem.update(validatedItem);
-			response.status(200).send(existingItem);
+			await existingInstance.update(validatedInstance);
+			response.status(200).send(existingInstance);
 		} catch (error) {
 			sendErrorResponse(response, error as HttpStatus);
 		}
@@ -229,24 +309,27 @@ export abstract class BaseController<Type extends Model> {
 				};
 				throw error;
 			}
-			const itemId = Number(request.params.id);
-			if (itemId < 1) {
+			const instanceId = Number(request.params.id);
+			if (instanceId < 1) {
 				const error: HttpStatus = {
 					code: 400,
 					message: `Invalid ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
 				};
 				throw error;
 			}
-			const item = await this.model.findByPk(itemId);
-			if (!item) {
+			const instance = await this.model.findByPk(instanceId);
+			if (!instance) {
 				const error: HttpStatus = {
 					code: 404,
-					message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${itemId} not found.`,
+					message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${instanceId} not found.`,
 				};
 				throw error;
 			}
-			const validatedItem = await this.validateDelete(item, userId);
-			await validatedItem.destroy();
+			const validatedInstance = await this.validateDelete(
+				instance,
+				userId,
+			);
+			await validatedInstance.destroy();
 			response.status(200).send();
 		} catch (error) {
 			sendErrorResponse(response, error as HttpStatus);
@@ -256,7 +339,8 @@ export abstract class BaseController<Type extends Model> {
 	private initializeRoutes() {
 		mainRouter.use(`/${this.kebabCasedTypeName}`, this.router);
 		if (this.options.enableGet) {
-			this.router.get(`/:id`, this.get.bind(this));
+			this.router.get(`/:id`, this.getByPrimaryKey.bind(this));
+			this.router.get(`/`, this.get.bind(this));
 		}
 		if (this.options.enablePost) {
 			this.router.post(`/`, this.post.bind(this));
@@ -336,7 +420,10 @@ export abstract class BaseController<Type extends Model> {
 		});
 	}
 
-	private validateAttribute(model: ModelStatic<any>, attribute: string) {
+	private validateAttribute<AttributeModelType extends Model>(
+		model: ModelStatic<AttributeModelType>,
+		attribute: string,
+	) {
 		if (!Object.keys(model.getAttributes()).includes(attribute)) {
 			const modelName = model.name
 				.replace(
@@ -350,5 +437,246 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
+	}
+
+	private buildWhereOptions(
+		whereExpression: string,
+	): WhereOptions<Attributes<Type>> {
+		const tokens = this.tokenizeWhereExpression(whereExpression);
+		return this.parseWhereExpressionTokens(tokens).result;
+	}
+
+	private tokenizeWhereExpression(whereExpression: string): string[] {
+		const operators = [
+			`=`,
+			`<>`,
+			`!=`,
+			`>`,
+			`<`,
+			`>=`,
+			`<=`,
+			`AND`,
+			`OR`,
+			`LIKE`,
+			`IN`,
+			`NOT IN`,
+			`IS NULL`,
+			`IS NOT NULL`,
+			`(`,
+			`)`,
+		];
+		let tokenableWhereExpression = whereExpression;
+		operators.forEach((operator) => {
+			let inString = false;
+			let result = ``;
+			let index = 0;
+			while (index < tokenableWhereExpression.length) {
+				const startOrEndOfString =
+					tokenableWhereExpression[index] === `'` ||
+					tokenableWhereExpression[index] === `"`;
+				if (startOrEndOfString) {
+					inString = !inString;
+					result += tokenableWhereExpression[index];
+					index++;
+					continue;
+				}
+				const isOperator =
+					!String &&
+					tokenableWhereExpression
+						.substring(index, index + operator.length)
+						.toUpperCase() === operator;
+				if (isOperator) {
+					result += ` ${operator} `;
+					index += operator.length;
+				} else {
+					result += tokenableWhereExpression[index];
+					index++;
+				}
+			}
+			tokenableWhereExpression = result;
+		});
+		const tokens = tokenableWhereExpression
+			.split(/\s+/u)
+			.filter((token) => token.trim() !== ``);
+		return tokens;
+	}
+
+	// eslint-disable-next-line complexity
+	private parseWhereExpressionTokens(
+		tokens: string[],
+		startIndex: number = 0,
+	): { result: WhereOptions<any>; endIndex: number } {
+		if (startIndex >= tokens.length) {
+			return {
+				endIndex: startIndex,
+				result: {},
+			};
+		}
+		const conditions: WhereOptions<any>[] = [];
+		let whereCondition: WhereOptions<any> = {};
+		let currentIndex = startIndex;
+		let currentOperator: `AND` | `OR` | null = null;
+		while (currentIndex < tokens.length) {
+			const token = tokens[currentIndex];
+			if (!token) {
+				currentIndex++;
+				continue;
+			}
+			if (token === `(`) {
+				const subExpression = this.parseWhereExpressionTokens(
+					tokens,
+					currentIndex + 1,
+				);
+				conditions.push(subExpression.result);
+				currentIndex = subExpression.endIndex + 1;
+				continue;
+			}
+			if (token === `)`) {
+				break;
+			}
+			if (
+				token?.toUpperCase() === `AND` ||
+				token?.toUpperCase() === `OR`
+			) {
+				currentOperator = token.toUpperCase() as `AND` | `OR`;
+				currentIndex++;
+				continue;
+			}
+			const isFieldOperatorValue = currentIndex + 2 < tokens.length;
+			if (isFieldOperatorValue) {
+				const field = token;
+				const operator = tokens[currentIndex + 1]?.toUpperCase();
+				const value = tokens[currentIndex + 2];
+				const condition: WhereOptions<any> = {};
+				switch (operator) {
+					case `=`:
+						condition[field] =
+							this.parseWhereExpressionValue(value);
+						break;
+					case `<>`:
+					case `!=`:
+						condition[field] = {
+							[Op.ne]: this.parseWhereExpressionValue(value),
+						};
+						break;
+					case `>`:
+						condition[field] = {
+							[Op.gt]: this.parseWhereExpressionValue(value),
+						};
+						break;
+					case `<`:
+						condition[field] = {
+							[Op.lt]: this.parseWhereExpressionValue(value),
+						};
+						break;
+					case `>=`:
+						condition[field] = {
+							[Op.gte]: this.parseWhereExpressionValue(value),
+						};
+						break;
+					case `<=`:
+						condition[field] = {
+							[Op.lte]: this.parseWhereExpressionValue(value),
+						};
+						break;
+					case `LIKE`:
+						condition[field] = {
+							[Op.like]: this.parseWhereExpressionValue(value),
+						};
+						break;
+					case `IN`:
+						if (value === `(` && currentIndex + 3 < tokens.length) {
+							const inValues = [];
+							currentIndex += 3;
+							// eslint-disable-next-line max-depth
+							while (
+								currentIndex < tokens.length &&
+								tokens[currentIndex] !== `)`
+							) {
+								// eslint-disable-next-line max-depth
+								if (tokens[currentIndex] !== `,`) {
+									inValues.push(
+										this.parseWhereExpressionValue(
+											tokens[currentIndex],
+										),
+									);
+								}
+								currentIndex++;
+							}
+							condition[field] = { [Op.in]: inValues };
+							break;
+						}
+						condition[field] = {
+							[Op.in]: [this.parseWhereExpressionValue(value)],
+						};
+						break;
+					default:
+						conditions.push({
+							[field]: this.parseWhereExpressionValue(value),
+						});
+						break;
+				}
+				conditions.push(condition);
+				currentIndex += 3;
+				continue;
+			}
+			if (
+				currentIndex + 2 < tokens.length &&
+				tokens[currentIndex + 1]?.toUpperCase() === `IS` &&
+				tokens[currentIndex + 2]?.toUpperCase() === `NULL`
+			) {
+				const field = token;
+				conditions.push({ [field]: null });
+				currentIndex += 3;
+				continue;
+			}
+			if (
+				currentIndex + 3 < tokens.length &&
+				tokens[currentIndex + 1]?.toUpperCase() === `IS` &&
+				tokens[currentIndex + 2]?.toUpperCase() === `NOT` &&
+				tokens[currentIndex + 3]?.toUpperCase() === `NULL`
+			) {
+				const field = token;
+				conditions.push({ [field]: { [Op.ne]: null } });
+				currentIndex += 4;
+				continue;
+			}
+			currentIndex++;
+		}
+		if (conditions.length > 1) {
+			if (currentOperator === `OR`) {
+				whereCondition = { [Op.or]: conditions };
+			} else {
+				whereCondition = { [Op.and]: conditions };
+			}
+		} else if (conditions.length === 1 && conditions[0]) {
+			[whereCondition] = conditions;
+		}
+		return {
+			endIndex: currentIndex,
+			result: whereCondition,
+		};
+	}
+
+	private parseWhereExpressionValue(value: string | undefined): any {
+		if (!value) {
+			return null;
+		}
+		if (
+			(value.startsWith(`'`) && value.endsWith(`'`)) ||
+			(value.startsWith(`"`) && value.endsWith(`"`))
+		) {
+			return value.substring(1, value.length - 1);
+		}
+		if (!isNaN(Number(value))) {
+			return Number(value);
+		}
+		if (value.toUpperCase() === `TRUE`) {
+			return true;
+		}
+		if (value.toUpperCase() === `FALSE`) {
+			return false;
+		}
+		return value;
 	}
 }

@@ -8,10 +8,10 @@ export class PreferencesController extends BaseController<PreferencesModel> {
 	}
 
 	public override async validateGet(
-		item: PreferencesModel,
+		instance: PreferencesModel,
 		userId?: number,
 	): Promise<PreferencesModel> {
-		if (userId !== item.userId) {
+		if (userId !== instance.userId) {
 			const error: HttpStatus = {
 				code: 403,
 				message: `Cannot get ${this.titleCasedTypeName} that aren't yours.`,
@@ -19,14 +19,14 @@ export class PreferencesController extends BaseController<PreferencesModel> {
 			throw error;
 		}
 
-		return item;
+		return instance;
 	}
 
 	public override async validatePost(
-		item: PreferencesModel,
+		instance: PreferencesModel,
 		userId?: number,
 	): Promise<PreferencesModel> {
-		if (userId !== item.userId) {
+		if (userId !== instance.userId) {
 			const error: HttpStatus = {
 				code: 403,
 				message: `Cannot create ${this.titleCasedTypeName} that aren't yours.`,
@@ -34,15 +34,18 @@ export class PreferencesController extends BaseController<PreferencesModel> {
 			throw error;
 		}
 
-		return item;
+		return instance;
 	}
 
 	public override async validatePut(
-		existingItem: PreferencesModel,
-		newItem: Partial<PreferencesModel>,
+		existingInstance: PreferencesModel,
+		newInstance: Partial<PreferencesModel>,
 		userId?: number,
 	): Promise<Partial<PreferencesModel>> {
-		if (userId !== existingItem.userId || userId !== newItem.userId) {
+		if (
+			userId !== existingInstance.userId ||
+			userId !== newInstance.userId
+		) {
 			const error: HttpStatus = {
 				code: 403,
 				message: `Cannot update ${this.titleCasedTypeName} that aren't yours.`,
@@ -50,14 +53,14 @@ export class PreferencesController extends BaseController<PreferencesModel> {
 			throw error;
 		}
 
-		return newItem;
+		return newInstance;
 	}
 
 	public override async validateDelete(
-		item: PreferencesModel,
+		instance: PreferencesModel,
 		userId?: number,
 	): Promise<PreferencesModel> {
-		if (userId !== item.userId) {
+		if (userId !== instance.userId) {
 			const error: HttpStatus = {
 				code: 403,
 				message: `Cannot delete ${this.titleCasedTypeName} that aren't yours.`,
@@ -65,6 +68,6 @@ export class PreferencesController extends BaseController<PreferencesModel> {
 			throw error;
 		}
 
-		return item;
+		return instance;
 	}
 }

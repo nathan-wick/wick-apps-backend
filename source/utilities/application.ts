@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 import DashboardConfigurationModel, {
 	initializeDashboardConfigurationModel,
 } from '../models/dashboard-configuration';
@@ -63,7 +62,6 @@ export class Application {
 
 	public async start() {
 		try {
-			console.log(`Starting application...`);
 			this.initializeGlobalVariables();
 			this.initializeModels();
 			this.initializeAssociations();
@@ -73,22 +71,21 @@ export class Application {
 				this.rateLimiter.startOpenHandles();
 			}
 			this.initializeExpress();
-			console.log(`Application started.`);
 		} catch (error) {
+			// eslint-disable-next-line no-console
 			console.error(`Error while starting the application.`, error);
 		}
 	}
 
 	public async stop() {
 		try {
-			console.log(`Stopping application...`);
 			await database.close();
 			if (this.configuration.enableRateLimiter) {
 				this.rateLimiter.stopOpenHandles();
 			}
 			this.server?.close();
-			console.log(`Application stopped.`);
 		} catch (error) {
+			// eslint-disable-next-line no-console
 			console.error(`Error while stopping the application.`, error);
 		}
 	}

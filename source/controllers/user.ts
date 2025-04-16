@@ -10,10 +10,10 @@ export class UserController extends BaseController<UserModel> {
 	}
 
 	public override async validateGet(
-		item: UserModel,
+		instance: UserModel,
 		userId?: number,
 	): Promise<UserModel> {
-		if (userId !== item.id) {
+		if (userId !== instance.id) {
 			const error: HttpStatus = {
 				code: 403,
 				message: `Cannot get a ${this.titleCasedTypeName} that isn't yours.`,
@@ -21,15 +21,15 @@ export class UserController extends BaseController<UserModel> {
 			throw error;
 		}
 
-		return item;
+		return instance;
 	}
 
 	public override async validatePut(
-		existingItem: UserModel,
-		newItem: Partial<UserModel>,
+		existingInstance: UserModel,
+		newInstance: Partial<UserModel>,
 		userId?: number,
 	): Promise<Partial<UserModel>> {
-		if (userId !== existingItem.id || userId !== newItem.id) {
+		if (userId !== existingInstance.id || userId !== newInstance.id) {
 			const error: HttpStatus = {
 				code: 403,
 				message: `Cannot update a ${this.titleCasedTypeName} that isn't yours.`,
@@ -37,7 +37,7 @@ export class UserController extends BaseController<UserModel> {
 			throw error;
 		}
 
-		if (newItem.email && existingItem.email !== newItem.email) {
+		if (newInstance.email && existingInstance.email !== newInstance.email) {
 			const error: HttpStatus = {
 				code: 400,
 				message: `A ${this.titleCasedTypeName}'s email address cannot be changed.`,
@@ -47,14 +47,14 @@ export class UserController extends BaseController<UserModel> {
 
 		// TODO Validate the user's picture
 
-		return newItem;
+		return newInstance;
 	}
 
 	public override async validateDelete(
-		item: UserModel,
+		instance: UserModel,
 		userId?: number,
 	): Promise<UserModel> {
-		if (userId !== item.id) {
+		if (userId !== instance.id) {
 			const error: HttpStatus = {
 				code: 403,
 				message: `Cannot delete a ${this.titleCasedTypeName} that isn't yours.`,
@@ -62,6 +62,6 @@ export class UserController extends BaseController<UserModel> {
 			throw error;
 		}
 
-		return item;
+		return instance;
 	}
 }

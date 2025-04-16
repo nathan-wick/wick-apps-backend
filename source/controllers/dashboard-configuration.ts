@@ -8,10 +8,10 @@ export class DashboardConfigurationController extends BaseController<DashboardCo
 	}
 
 	public override async validateGet(
-		item: DashboardConfigurationModel,
+		instance: DashboardConfigurationModel,
 		userId?: number,
 	): Promise<DashboardConfigurationModel> {
-		if (userId !== item.userId) {
+		if (userId !== instance.userId) {
 			const error: HttpStatus = {
 				code: 403,
 				message: `Cannot get a ${this.titleCasedTypeName} that isn't yours.`,
@@ -19,14 +19,14 @@ export class DashboardConfigurationController extends BaseController<DashboardCo
 			throw error;
 		}
 
-		return item;
+		return instance;
 	}
 
 	public override async validatePost(
-		item: DashboardConfigurationModel,
+		instance: DashboardConfigurationModel,
 		userId?: number,
 	): Promise<DashboardConfigurationModel> {
-		if (userId !== item.userId) {
+		if (userId !== instance.userId) {
 			const error: HttpStatus = {
 				code: 403,
 				message: `Cannot create a ${this.titleCasedTypeName} that isn't yours.`,
@@ -34,15 +34,18 @@ export class DashboardConfigurationController extends BaseController<DashboardCo
 			throw error;
 		}
 
-		return item;
+		return instance;
 	}
 
 	public override async validatePut(
-		existingItem: DashboardConfigurationModel,
-		newItem: Partial<DashboardConfigurationModel>,
+		existingInstance: DashboardConfigurationModel,
+		newInstance: Partial<DashboardConfigurationModel>,
 		userId?: number,
 	): Promise<Partial<DashboardConfigurationModel>> {
-		if (userId !== existingItem.userId || userId !== newItem.userId) {
+		if (
+			userId !== existingInstance.userId ||
+			userId !== newInstance.userId
+		) {
 			const error: HttpStatus = {
 				code: 403,
 				message: `Cannot update a ${this.titleCasedTypeName} that isn't yours.`,
@@ -50,14 +53,14 @@ export class DashboardConfigurationController extends BaseController<DashboardCo
 			throw error;
 		}
 
-		return newItem;
+		return newInstance;
 	}
 
 	public override async validateDelete(
-		item: DashboardConfigurationModel,
+		instance: DashboardConfigurationModel,
 		userId?: number,
 	): Promise<DashboardConfigurationModel> {
-		if (userId !== item.userId) {
+		if (userId !== instance.userId) {
 			const error: HttpStatus = {
 				code: 403,
 				message: `Cannot delete a ${this.titleCasedTypeName} that isn't yours.`,
@@ -65,6 +68,6 @@ export class DashboardConfigurationController extends BaseController<DashboardCo
 			throw error;
 		}
 
-		return item;
+		return instance;
 	}
 }

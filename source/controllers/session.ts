@@ -19,10 +19,10 @@ export class SessionController extends BaseController<SessionModel> {
 	}
 
 	public override async validateGet(
-		item: SessionModel,
+		instance: SessionModel,
 		userId?: number,
 	): Promise<SessionModel> {
-		if (userId !== item.userId) {
+		if (userId !== instance.userId) {
 			const error: HttpStatus = {
 				code: 403,
 				message: `Cannot get a ${this.titleCasedTypeName} that isn't yours.`,
@@ -30,14 +30,14 @@ export class SessionController extends BaseController<SessionModel> {
 			throw error;
 		}
 
-		return item;
+		return instance;
 	}
 
 	public override async validateDelete(
-		item: SessionModel,
+		instance: SessionModel,
 		userId?: number,
 	): Promise<SessionModel> {
-		if (userId !== item.userId) {
+		if (userId !== instance.userId) {
 			const error: HttpStatus = {
 				code: 403,
 				message: `Cannot delete a ${this.titleCasedTypeName} that isn't yours.`,
@@ -45,7 +45,7 @@ export class SessionController extends BaseController<SessionModel> {
 			throw error;
 		}
 
-		return item;
+		return instance;
 	}
 
 	public override initializeAdditionalRoutes(): void {

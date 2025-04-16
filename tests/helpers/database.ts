@@ -9,19 +9,19 @@ import {
 
 export abstract class DatabaseHelper {
 	/**
-	 * Creates, saves, and returns a fully populated test object with associations.
+	 * Creates, saves, and returns a fully populated test instance with associations.
 	 */
-	public static async createTestObject<TestObjectType extends Model>(
-		model: ModelStatic<TestObjectType>,
+	public static async createTestInstance<Type extends Model>(
+		model: ModelStatic<Type>,
 		createdModels: Map<string, any> = new Map(),
-		depth: number = 0,
-		maxDepth: number = 1,
-	): Promise<TestObjectType> {
-		if (depth > maxDepth) {
+		associationDepth: number = 0,
+		maxAssociationDepth: number = 1,
+	): Promise<Type> {
+		if (associationDepth > maxAssociationDepth) {
 			return null as any;
 		}
 
-		const initialTestObject: any = {};
+		const initialTestInstance: any = {};
 
 		for (const [key, attribute] of Object.entries(model.getAttributes())) {
 			const foreignKeyAssociation = Object.values(
@@ -31,34 +31,36 @@ export abstract class DatabaseHelper {
 				foreignKeyAssociation?.associationType === BelongsTo.name;
 
 			if (attributeIsBelongsAssociation) {
-				const associatedObject =
+				const associatedInstance =
 					createdModels.get(foreignKeyAssociation!.target.name) ??
-					(await this.createTestObject(
+					(await this.createTestInstance(
 						foreignKeyAssociation!.target,
 						createdModels,
-						depth + 1,
-						maxDepth,
+						associationDepth + 1,
+						maxAssociationDepth,
 					));
 
-				initialTestObject[key] = associatedObject.get(
+				initialTestInstance[key] = associatedInstance.get(
 					foreignKeyAssociation!.target.primaryKeyAttribute,
 				);
 			} else if (attribute.autoIncrement) {
 				continue;
 			} else if (!foreignKeyAssociation) {
-				initialTestObject[key] = this.createTestValue(attribute);
+				initialTestInstance[key] = this.createTestValue(attribute);
 			}
 		}
 
-        const testObject = await model.create(initialTestObject, { hooks: false });
-		createdModels.set(model.name, testObject);
+		const testInstance = await model.create(initialTestInstance, {
+			hooks: false,
+		});
+		createdModels.set(model.name, testInstance);
 
-		if (depth === maxDepth) {
-			await testObject.reload({
+		if (associationDepth === maxAssociationDepth) {
+			await testInstance.reload({
 				include: Object.values(model.associations),
 			});
 
-			return testObject;
+			return testInstance;
 		}
 
 		const associationAttributesToUpdate = Object.entries(
@@ -93,40 +95,42 @@ export abstract class DatabaseHelper {
 				association.target.primaryKeyAttribute;
 
 			if (isForeignKeyPrimaryKey) {
-				const existingAssociatedObject =
+				const existingAssociatedInstance =
 					await association.target.findByPk(
-						`${testObject.get(model.primaryKeyAttribute)}`,
+						`${testInstance.get(model.primaryKeyAttribute)}`,
 					);
 
-				if (existingAssociatedObject) {
+				if (existingAssociatedInstance) {
 					associationAttributeUpdateValues[associationName] =
-						existingAssociatedObject;
+						existingAssociatedInstance;
 					continue;
 				}
 			}
 
-			const newAssociatedObject = await this.createTestObject(
+			const newAssociatedInstance = await this.createTestInstance(
 				association.target,
 				createdModels,
-				depth + 1,
-				maxDepth,
+				associationDepth + 1,
+				maxAssociationDepth,
 			);
 
-			if (newAssociatedObject) {
+			if (newAssociatedInstance) {
 				associationAttributeUpdateValues[associationName] =
-					newAssociatedObject;
+					newAssociatedInstance;
 			}
 		}
 
 		if (Object.keys(associationAttributeUpdateValues).length > 0) {
-			await testObject.update(associationAttributeUpdateValues, { hooks: false });
+			await testInstance.update(associationAttributeUpdateValues, {
+				hooks: false,
+			});
 		}
 
-		await testObject.reload({
+		await testInstance.reload({
 			include: Object.values(model.associations),
 		});
 
-		return testObject;
+		return testInstance;
 	}
 
 	private static createTestValue(
