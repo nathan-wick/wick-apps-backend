@@ -5,7 +5,7 @@ export { sessionTokenValidator } from './constants/session-token-validator';
 export {
 	BaseController,
 	type BaseControllerOptions,
-	defaultOptions,
+	defaultBaseControllerOptions,
 } from './controllers/base';
 export { DashboardConfigurationController } from './controllers/dashboard-configuration';
 export { PreferencesController } from './controllers/preferences';
@@ -25,4 +25,5 @@ export {
 	database,
 } from './utilities/application';
 export { Emailer } from './utilities/emailer';
+export { defaultRateLimiterOptions } from './utilities/rate-limiter';
 export { Shield } from './utilities/shield';

@@ -14,6 +14,18 @@ export interface RateLimiterOptions {
 	responseStatusCode: number;
 }
 
+export const defaultRateLimiterOptions: RateLimiterOptions = {
+	autoScaleLimits: true,
+	blockDurationInMinutes: 100,
+	burstThreshold: 5,
+	cleanupIntervalInMinutes: 5,
+	enableTosProtection: true,
+	maxRequestsPerHour: 1000,
+	maxRequestsPerMinute: 100,
+	maxRequestsPerSecond: 10,
+	responseStatusCode: 429,
+};
+
 interface RequestData {
 	timestamps: number[];
 	bursts: number;
@@ -34,20 +46,11 @@ export default class RateLimiter {
 	private serverLoadMonitor: NodeJS.Timeout | null = null;
 	private serverLoad: number = 0;
 
-	constructor(
-		options: RateLimiterOptions = {
-			autoScaleLimits: true,
-			blockDurationInMinutes: 100,
-			burstThreshold: 5,
-			cleanupIntervalInMinutes: 5,
-			enableTosProtection: true,
-			maxRequestsPerHour: 1000,
-			maxRequestsPerMinute: 100,
-			maxRequestsPerSecond: 10,
-			responseStatusCode: 429,
-		},
-	) {
-		this.options = options;
+	constructor(options?: RateLimiterOptions) {
+		this.options = {
+			...defaultRateLimiterOptions,
+			...options,
+		};
 	}
 
 	public middleware() {

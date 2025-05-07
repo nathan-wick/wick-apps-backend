@@ -6,22 +6,16 @@ import {
 	ModelAttributeColumnOptions,
 	ModelStatic,
 } from 'sequelize';
+import { MakeNullishOptional } from 'sequelize/types/utils';
 
 export abstract class DatabaseHelper {
-	/**
-	 * Creates, saves, and returns a fully populated test instance with associations.
-	 */
-	public static async createTestInstance<Type extends Model>(
+	public static async createMinimalTestInstance<Type extends Model>(
 		model: ModelStatic<Type>,
 		createdModels: Map<string, any> = new Map(),
 		associationDepth: number = 0,
-		maxAssociationDepth: number = 1,
-	): Promise<Type> {
-		if (associationDepth > maxAssociationDepth) {
-			return null as any;
-		}
-
-		const initialTestInstance: any = {};
+		maximumAssociationDepth: number = 1,
+	): Promise<MakeNullishOptional<Type[`_creationAttributes`]>> {
+		const testInstance: Record<string, any> = {};
 
 		for (const [key, attribute] of Object.entries(model.getAttributes())) {
 			const foreignKeyAssociation = Object.values(
@@ -30,32 +24,52 @@ export abstract class DatabaseHelper {
 			const attributeIsBelongsAssociation: boolean =
 				foreignKeyAssociation?.associationType === BelongsTo.name;
 
-			if (attributeIsBelongsAssociation) {
+			if (foreignKeyAssociation && attributeIsBelongsAssociation) {
 				const associatedInstance =
-					createdModels.get(foreignKeyAssociation!.target.name) ??
+					createdModels.get(foreignKeyAssociation.target.name) ??
 					(await this.createTestInstance(
-						foreignKeyAssociation!.target,
+						foreignKeyAssociation.target,
 						createdModels,
 						associationDepth + 1,
-						maxAssociationDepth,
+						maximumAssociationDepth,
 					));
 
-				initialTestInstance[key] = associatedInstance.get(
+				testInstance[key] = associatedInstance.get(
 					foreignKeyAssociation!.target.primaryKeyAttribute,
 				);
 			} else if (attribute.autoIncrement) {
 				continue;
 			} else if (!foreignKeyAssociation) {
-				initialTestInstance[key] = this.createTestValue(attribute);
+				testInstance[key] = this.createTestValue(attribute);
 			}
 		}
 
-		const testInstance = await model.create(initialTestInstance, {
+		return testInstance as MakeNullishOptional<Type[`_creationAttributes`]>;
+	}
+
+	public static async createTestInstance<Type extends Model>(
+		model: ModelStatic<Type>,
+		createdModels: Map<string, any> = new Map(),
+		associationDepth: number = 0,
+		maximumAssociationDepth: number = 1,
+	): Promise<Type> {
+		if (associationDepth > maximumAssociationDepth) {
+			return null as any;
+		}
+
+		const minimalTestInstance = await this.createMinimalTestInstance(
+			model,
+			createdModels,
+			associationDepth,
+			maximumAssociationDepth,
+		);
+
+		const testInstance = await model.create(minimalTestInstance, {
 			hooks: false,
 		});
 		createdModels.set(model.name, testInstance);
 
-		if (associationDepth === maxAssociationDepth) {
+		if (associationDepth === maximumAssociationDepth) {
 			await testInstance.reload({
 				include: Object.values(model.associations),
 			});
@@ -111,7 +125,7 @@ export abstract class DatabaseHelper {
 				association.target,
 				createdModels,
 				associationDepth + 1,
-				maxAssociationDepth,
+				maximumAssociationDepth,
 			);
 
 			if (newAssociatedInstance) {
@@ -133,7 +147,7 @@ export abstract class DatabaseHelper {
 		return testInstance;
 	}
 
-	private static createTestValue(
+	public static createTestValue(
 		attribute: ModelAttributeColumnOptions<Model<any, any>>,
 	): any {
 		switch (attribute.type.constructor.name) {

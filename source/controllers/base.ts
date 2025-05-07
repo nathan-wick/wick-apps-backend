@@ -23,7 +23,7 @@ export interface BaseControllerOptions {
 	enablePut: boolean;
 }
 
-export const defaultOptions: BaseControllerOptions = {
+export const defaultBaseControllerOptions: BaseControllerOptions = {
 	allowAnonymousDelete: false,
 	allowAnonymousGet: false,
 	allowAnonymousPost: false,
@@ -50,7 +50,7 @@ export abstract class BaseController<Type extends Model> {
 		this.router = Router();
 		this.model = model;
 		this.options = {
-			...defaultOptions,
+			...defaultBaseControllerOptions,
 			...options,
 		};
 		this.primaryKeyAttribute = this.model.primaryKeyAttribute;
@@ -233,9 +233,9 @@ export abstract class BaseController<Type extends Model> {
 				throw error;
 			}
 			const validatedInstance = await this.validatePost(instance, userId);
-			const createdInstance = await this.model.create({
-				...validatedInstance.dataValues,
-			});
+			const createdInstance = await this.model.create(
+				validatedInstance as any,
+			);
 			response.status(201).send(createdInstance);
 		} catch (error) {
 			sendErrorResponse(response, error as HttpStatus);
@@ -252,26 +252,15 @@ export abstract class BaseController<Type extends Model> {
 				};
 				throw error;
 			}
-			const primaryKey = this.model.primaryKeyAttribute;
+			const attributes = request.query.attributes
+				? Array.isArray(request.query.attributes)
+					? (request.query.attributes as string[])
+					: [request.query.attributes as string]
+				: [];
+			attributes.forEach((attribute) =>
+				this.validateAttribute(this.model, attribute),
+			);
 			const newInstance = request.body;
-			let instanceId: number | undefined;
-			if (primaryKey in newInstance) {
-				instanceId = newInstance[this.model.primaryKeyAttribute];
-			}
-			if (!instanceId) {
-				const error: HttpStatus = {
-					code: 400,
-					message: `Missing ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
-				};
-				throw error;
-			}
-			if (instanceId < 1) {
-				const error: HttpStatus = {
-					code: 400,
-					message: `Invalid ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
-				};
-				throw error;
-			}
 			if (!newInstance) {
 				const error: HttpStatus = {
 					code: 400,
@@ -279,11 +268,28 @@ export abstract class BaseController<Type extends Model> {
 				};
 				throw error;
 			}
-			const existingInstance = await this.model.findByPk(instanceId);
+			const primaryKeyValue: number | undefined =
+				newInstance[this.model.primaryKeyAttribute];
+			if (!primaryKeyValue) {
+				const error: HttpStatus = {
+					code: 400,
+					message: `Missing ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
+				};
+				throw error;
+			}
+			if (primaryKeyValue < 1) {
+				const error: HttpStatus = {
+					code: 400,
+					message: `Invalid ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
+				};
+				throw error;
+			}
+			const existingInstance = await this.model.findByPk(primaryKeyValue);
 			if (!existingInstance) {
 				const error: HttpStatus = {
 					code: 404,
-					message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${instanceId} not found.`,
+					// eslint-disable-next-line max-len
+					message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${primaryKeyValue} not found.`,
 				};
 				throw error;
 			}
@@ -292,7 +298,9 @@ export abstract class BaseController<Type extends Model> {
 				newInstance,
 				userId,
 			);
-			await existingInstance.update(validatedInstance);
+			await existingInstance.update(validatedInstance, {
+				fields: attributes || undefined,
+			});
 			response.status(200).send(existingInstance);
 		} catch (error) {
 			sendErrorResponse(response, error as HttpStatus);

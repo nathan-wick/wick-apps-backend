@@ -1,4 +1,4 @@
-import type { ApplicationConfiguration } from '../../source/utilities/application';
+import { ApplicationConfiguration, defaultRateLimiterOptions } from '../../source';
 
 export const testApplicationConfiguration: ApplicationConfiguration = {
 	controllers: [],
@@ -16,4 +16,5 @@ export const testApplicationConfiguration: ApplicationConfiguration = {
 	enableRateLimiter: true,
 	name: `Test App`,
 	port: null,
+	rateLimiterOptions: defaultRateLimiterOptions,
 };

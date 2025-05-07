@@ -1,6 +1,7 @@
 import { Application, BaseController, UserModel } from '../../source';
 import { Model, ModelStatic } from 'sequelize';
 import { DatabaseHelper } from './database';
+import { MakeNullishOptional } from 'sequelize/types/utils';
 import { SessionHelper } from './session';
 import request from 'supertest';
 import { testApplicationConfiguration } from './application-configuration';
@@ -50,6 +51,9 @@ export abstract class BaseControllerTest<Type extends Model> {
 		this.testTestEnvironment();
 		this.testGetByPrimaryKey();
 		this.testGet();
+		this.testPost();
+		this.testPut();
+		this.testDelete();
 	}
 
 	private testTestEnvironment() {
@@ -209,15 +213,9 @@ export abstract class BaseControllerTest<Type extends Model> {
 				});
 			} else {
 				it(`should not find endpoints`, async () => {
-					const testInstancePrimaryKeyValue =
-						this.getRandomTestInstance().get(
-							this.controller.model.primaryKeyAttribute,
-						);
 					const response = await request(
 						this.application.express,
-					).get(
-						`/${this.controller.kebabCasedTypeName}/${testInstancePrimaryKeyValue}`,
-					);
+					).get(`/${this.controller.kebabCasedTypeName}/${0}`);
 					expect(response.status).toBe(404);
 				});
 			}
@@ -346,12 +344,14 @@ export abstract class BaseControllerTest<Type extends Model> {
 					const firstAttribute = attributes[0] ?? primaryKeyAttribute;
 					const secondAttribute =
 						attributes[1] ?? primaryKeyAttribute;
-					const firstAttributeValue = this.serializeWhereExpressionValue(
-						testInstance.getDataValue(firstAttribute),
-					);
-					const secondAttributeValue = this.serializeWhereExpressionValue(
-						testInstance.getDataValue(secondAttribute),
-					);
+					const firstAttributeValue =
+						this.serializeWhereExpressionValue(
+							testInstance.getDataValue(firstAttribute),
+						);
+					const secondAttributeValue =
+						this.serializeWhereExpressionValue(
+							testInstance.getDataValue(secondAttribute),
+						);
 					// eslint-disable-next-line max-len
 					const where = `${firstAttribute} = ${firstAttributeValue} OR ${secondAttribute} = ${secondAttributeValue}`;
 					const response = await request(this.application.express)
@@ -387,12 +387,14 @@ export abstract class BaseControllerTest<Type extends Model> {
 					const firstAttribute = attributes[0] ?? primaryKeyAttribute;
 					const secondAttribute =
 						attributes[1] ?? primaryKeyAttribute;
-					const firstAttributeValue = this.serializeWhereExpressionValue(
-						testInstance.getDataValue(firstAttribute),
-					);
-					const secondAttributeValue = this.serializeWhereExpressionValue(
-						testInstance.getDataValue(secondAttribute),
-					);
+					const firstAttributeValue =
+						this.serializeWhereExpressionValue(
+							testInstance.getDataValue(firstAttribute),
+						);
+					const secondAttributeValue =
+						this.serializeWhereExpressionValue(
+							testInstance.getDataValue(secondAttribute),
+						);
 					// eslint-disable-next-line max-len
 					const where = `${firstAttribute} = ${firstAttributeValue} AND ${secondAttribute} = ${secondAttributeValue}`;
 					const response = await request(this.application.express)
@@ -429,6 +431,183 @@ export abstract class BaseControllerTest<Type extends Model> {
 		});
 	}
 
+	private testPost() {
+		describe(`post`, () => {
+			beforeEach(() => {
+				jest.spyOn(this.controller, `validatePost`).mockImplementation(
+					async (instance) => instance,
+				);
+			});
+			afterEach(() => {
+				jest.restoreAllMocks();
+			});
+			if (this.controller.options.enablePost) {
+				const anonymousAccess = this.controller.options
+					.allowAnonymousPost
+					? `allow`
+					: `deny`;
+				it(`should ${anonymousAccess} anonymous access`, async () => {
+					const postable =
+						await DatabaseHelper.createMinimalTestInstance(
+							this.controller.model,
+						);
+					const response = await request(this.application.express)
+						.post(`/${this.controller.kebabCasedTypeName}`)
+						.send(postable);
+					if (this.controller.options.allowAnonymousPost) {
+						expect(response.status).toBe(201);
+					} else {
+						expect(response.status).toBe(403);
+					}
+				});
+				it(`should create`, async () => {
+					const postable =
+						await DatabaseHelper.createMinimalTestInstance(
+							this.controller.model,
+						);
+					const response = await request(this.application.express)
+						.post(`/${this.controller.kebabCasedTypeName}`)
+						.send(postable)
+						.set(this.testUserSessionTokenHeader);
+					expect(response.status).toBe(201);
+					Object.keys(this.jsonDeepClone(postable)).forEach((key) => {
+						expect(response.body).toHaveProperty(key);
+					});
+					expect(
+						response.body[
+							this.controller.model.primaryKeyAttribute
+						],
+					).toBeTruthy();
+				});
+			} else {
+				it(`should not find endpoints`, async () => {
+					const response = await request(this.application.express)
+						.post(`/${this.controller.kebabCasedTypeName}`)
+						.send({});
+					expect(response.status).toBe(404);
+				});
+			}
+		});
+	}
+
+	private testPut() {
+		describe(`put`, () => {
+			beforeEach(() => {
+				jest.spyOn(this.controller, `validatePut`).mockImplementation(
+					async (existingInstance, newInstance) => newInstance,
+				);
+			});
+			afterEach(() => {
+				jest.restoreAllMocks();
+			});
+			if (this.controller.options.enablePut) {
+				const anonymousAccess = this.controller.options
+					.allowAnonymousPut
+					? `allow`
+					: `deny`;
+				it(`should ${anonymousAccess} anonymous access`, async () => {
+					const updatedInstance = await this.getUpdatedTestInstance();
+					const response = await request(this.application.express)
+						.put(`/${this.controller.kebabCasedTypeName}`)
+						.send(updatedInstance);
+					if (this.controller.options.allowAnonymousPost) {
+						expect(response.status).toBe(200);
+					} else {
+						expect(response.status).toBe(403);
+					}
+				});
+				it(`should update all attributes when none are given`, async () => {
+					const updatedInstance = await this.getUpdatedTestInstance();
+					const response = await request(this.application.express)
+						.put(`/${this.controller.kebabCasedTypeName}`)
+						.send(updatedInstance)
+						.set(this.testUserSessionTokenHeader);
+					expect(response.status).toBe(200);
+					Object.keys(this.jsonDeepClone(updatedInstance)).forEach(
+						(key) => {
+							expect(response.body).toHaveProperty(key);
+						},
+					);
+				});
+				it(`should update only the given attributes`, async () => {
+					const updatedInstance = await this.getUpdatedTestInstance();
+					const attributes = this.getRandomDirectAttributes();
+					const response = await request(this.application.express)
+						.put(`/${this.controller.kebabCasedTypeName}`)
+						.query({ attributes })
+						.send(updatedInstance)
+						.set(this.testUserSessionTokenHeader);
+					expect(response.status).toBe(200);
+					attributes.forEach((attribute) => {
+						expect(response.body).toHaveProperty(attribute);
+					});
+				});
+			} else {
+				it(`should not find endpoints`, async () => {
+					const response = await request(this.application.express)
+						.put(`/${this.controller.kebabCasedTypeName}`)
+						.send({});
+					expect(response.status).toBe(404);
+				});
+			}
+		});
+	}
+
+	private testDelete() {
+		describe(`delete`, () => {
+			beforeEach(() => {
+				jest.spyOn(
+					this.controller,
+					`validateDelete`,
+				).mockImplementation(async (instance) => instance);
+			});
+			afterEach(() => {
+				jest.restoreAllMocks();
+			});
+			if (this.controller.options.enableDelete) {
+				const anonymousAccess = this.controller.options
+					.allowAnonymousDelete
+					? `allow`
+					: `deny`;
+				it(`should ${anonymousAccess} anonymous access`, async () => {
+					const testInstance = this.getRandomTestInstance();
+					const testInstancePrimaryKeyValue = testInstance.get(
+						this.controller.model.primaryKeyAttribute,
+					);
+					const response = await request(
+						this.application.express,
+					).delete(
+						`/${this.controller.kebabCasedTypeName}/${testInstancePrimaryKeyValue}`,
+					);
+					if (this.controller.options.allowAnonymousDelete) {
+						expect(response.status).toBe(200);
+					} else {
+						expect(response.status).toBe(403);
+					}
+				});
+				it(`should delete`, async () => {
+					const testInstance = this.getRandomTestInstance();
+					const testInstancePrimaryKeyValue = testInstance.get(
+						this.controller.model.primaryKeyAttribute,
+					);
+					const response = await request(this.application.express)
+						.delete(
+							`/${this.controller.kebabCasedTypeName}/${testInstancePrimaryKeyValue}`,
+						)
+						.set(this.testUserSessionTokenHeader);
+					expect(response.status).toBe(200);
+				});
+			} else {
+				it(`should not find endpoints`, async () => {
+					const response = await request(
+						this.application.express,
+					).delete(`/${this.controller.kebabCasedTypeName}/${0}`);
+					expect(response.status).toBe(404);
+				});
+			}
+		});
+	}
+
 	public getRandomTestInstance(): Type {
 		if (!this.testInstances || this.testInstances.length === 0) {
 			throw `At least one test instance must be defined.`;
@@ -451,6 +630,18 @@ export abstract class BaseControllerTest<Type extends Model> {
 			...this.getRandomDirectAttributes(model, minimumNumberOfAttributes),
 			...this.getRandomNestedAttributes(model, minimumNumberOfAttributes),
 		];
+	}
+
+	public async getUpdatedTestInstance(): Promise<
+		MakeNullishOptional<Type[`_creationAttributes`]>
+	> {
+		const originalInstance = this.getRandomTestInstance();
+		const updatedInstance = await DatabaseHelper.createMinimalTestInstance(
+			this.controller.model,
+		);
+		const primaryKey = this.controller.model.primaryKeyAttribute;
+		(updatedInstance as any)[primaryKey] = originalInstance.get(primaryKey);
+		return updatedInstance;
 	}
 
 	public getRandomDirectAttributes(
@@ -479,8 +670,10 @@ export abstract class BaseControllerTest<Type extends Model> {
 		Object.entries(associations).forEach(
 			([associationName, association]) => {
 				const associatedModel = association.target;
-				const attributes =
-					this.getRandomDirectAttributes(associatedModel, minimumNumberOfAttributes);
+				const attributes = this.getRandomDirectAttributes(
+					associatedModel,
+					minimumNumberOfAttributes,
+				);
 				attributes.forEach((attribute) => {
 					nestedAttributes.push(`${associationName}.${attribute}`);
 				});
@@ -489,16 +682,24 @@ export abstract class BaseControllerTest<Type extends Model> {
 		return nestedAttributes.sort(() => Math.random() - 0.5);
 	}
 
-	public pickAttributes(instance: any, attributes: string[]): any {
+	public pickAttributes<InstanceType>(
+		instance: InstanceType,
+		attributes: string[],
+	): Partial<InstanceType> | Partial<InstanceType>[] | null {
 		if (!instance || !attributes) {
-			return instance;
+			return null;
 		}
 		if (Array.isArray(instance)) {
-			return instance.map((element) =>
-				this.pickAttributes(element, attributes),
-			);
+			return instance
+				.map((element: InstanceType) =>
+					this.pickAttributes(element, attributes),
+				)
+				.filter(
+					(element): element is Partial<InstanceType> =>
+						element !== null,
+				);
 		}
-		const result: any = {};
+		const result: Record<string, any> = {};
 		const attributeGroups: Record<string, string[]> = {};
 		attributes.forEach((attribute) => {
 			const [directAttribute, ...nestedAttributes] = attribute.split(`.`);
@@ -514,21 +715,19 @@ export abstract class BaseControllerTest<Type extends Model> {
 			}
 		});
 		Object.keys(attributeGroups).forEach((key) => {
-			if (!(key in instance)) {
-				return;
-			}
+			const instanceAsRecord = instance as Record<string, any>;
 			const nestedAttributes = attributeGroups[key];
 			if (nestedAttributes?.length) {
 				const value = this.pickAttributes(
-					instance[key],
+					instanceAsRecord[key],
 					nestedAttributes,
 				);
 				result[key] = value;
 			} else {
-				result[key] = instance[key];
+				result[key] = instanceAsRecord[key];
 			}
 		});
-		return result;
+		return result as Partial<InstanceType>;
 	}
 
 	public jsonDeepClone(instance: any) {

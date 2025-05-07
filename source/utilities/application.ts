@@ -4,13 +4,13 @@ import DashboardConfigurationModel, {
 import PreferencesModel, {
 	initializePreferencesModel,
 } from '../models/preferences';
+import RateLimiter, { RateLimiterOptions } from './rate-limiter';
 import SessionModel, { initializeSessionModel } from '../models/session';
 import UserModel, { initializeUserModel } from '../models/user';
 import { BaseController } from '../controllers/base';
 import { DashboardConfigurationController } from '../controllers/dashboard-configuration';
 import type { HttpStatus } from '../interfaces/http-status';
 import { PreferencesController } from '../controllers/preferences';
-import RateLimiter from './rate-limiter';
 import type SMTPTransport from 'nodemailer/lib/smtp-transport/index';
 import { Sequelize } from 'sequelize';
 import { SessionController } from '../controllers/session';
@@ -39,6 +39,7 @@ export interface ApplicationConfiguration {
 	enableRateLimiter: boolean;
 	name: string;
 	port: number | null;
+	rateLimiterOptions?: RateLimiterOptions;
 }
 
 export let applicationConfiguration: ApplicationConfiguration;
@@ -57,7 +58,7 @@ export class Application {
 	constructor(configuration: ApplicationConfiguration) {
 		this.express = express();
 		this.configuration = configuration;
-		this.rateLimiter = new RateLimiter();
+		this.rateLimiter = new RateLimiter(this.configuration.rateLimiterOptions);
 	}
 
 	public async start() {
@@ -128,6 +129,12 @@ export class Application {
 	}
 
 	private async initializeExpress() {
+		mainRouter.get(
+			`/test`,
+			(request: express.Request, response: express.Response) => {
+				response.send({ success: true });
+			},
+		);
 		this.express.use(cors(this.configuration.cors));
 		this.express.use(express.json({ limit: largeFileBytes }));
 		this.express.use(
@@ -160,29 +167,29 @@ export class Application {
 		DashboardConfigurationModel.belongsTo(UserModel, {
 			as: `user`,
 			foreignKey: `userId`,
+			onDelete: `CASCADE`,
 		});
 		PreferencesModel.belongsTo(UserModel, {
 			as: `user`,
 			foreignKey: `userId`,
+			onDelete: `CASCADE`,
 		});
 		SessionModel.belongsTo(UserModel, {
 			as: `user`,
 			foreignKey: `userId`,
+			onDelete: `CASCADE`,
 		});
 		UserModel.hasMany(SessionModel, {
 			as: `sessions`,
 			foreignKey: `userId`,
-			onDelete: `CASCADE`,
 		});
 		UserModel.hasOne(PreferencesModel, {
 			as: `preferences`,
 			foreignKey: `userId`,
-			onDelete: `CASCADE`,
 		});
 		UserModel.hasMany(DashboardConfigurationModel, {
 			as: `dashboardConfigurations`,
 			foreignKey: `userId`,
-			onDelete: `CASCADE`,
 		});
 	}
 }
