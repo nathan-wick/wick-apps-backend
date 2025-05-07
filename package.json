@@ -1,6 +1,6 @@
 {
 	"name": "wick-apps-backend",
-	"version": "0.2.5",
+	"version": "0.3.0",
 	"description": "",
 	"main": "distributable/index.js",
 	"type": "module",
