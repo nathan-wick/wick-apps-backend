@@ -1,3 +1,4 @@
+import { type Request, type Response } from 'express';
 import { BaseController } from './base';
 import type { HttpStatus } from '../interfaces/http-status';
 import UserModel from '../models/user';
@@ -5,7 +6,7 @@ import UserModel from '../models/user';
 export class UserController extends BaseController<UserModel> {
 	constructor() {
 		super(UserModel, {
-			enablePut: false,
+			enableCreate: false,
 		});
 	}
 
@@ -24,7 +25,7 @@ export class UserController extends BaseController<UserModel> {
 		return instance;
 	}
 
-	public override async validatePut(
+	public override async validateEdit(
 		existingInstance: UserModel,
 		newInstance: Partial<UserModel>,
 		userId?: number,
@@ -63,5 +64,20 @@ export class UserController extends BaseController<UserModel> {
 		}
 
 		return instance;
+	}
+
+	public override initializeAdditionalRoutes(): void {
+		this.router.get(
+			`/get-by-current-session`,
+			this.getByCurrentSession.bind(this),
+		);
+	}
+
+	private async getByCurrentSession(
+		request: Request,
+		response: Response,
+	): Promise<void> {
+		request.params.id = String(request.validatedSession?.userId);
+		this.getByPrimaryKey(request, response);
 	}
 }

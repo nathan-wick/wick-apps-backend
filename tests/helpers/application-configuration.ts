@@ -1,4 +1,7 @@
-import { ApplicationConfiguration, defaultRateLimiterOptions } from '../../source';
+import {
+	ApplicationConfiguration,
+	defaultRateLimiterOptions,
+} from '../../source';
 
 export const testApplicationConfiguration: ApplicationConfiguration = {
 	controllers: [],

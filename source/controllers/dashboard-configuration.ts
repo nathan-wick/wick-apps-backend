@@ -22,7 +22,7 @@ export class DashboardConfigurationController extends BaseController<DashboardCo
 		return instance;
 	}
 
-	public override async validatePost(
+	public override async validateCreate(
 		instance: DashboardConfigurationModel,
 		userId?: number,
 	): Promise<DashboardConfigurationModel> {
@@ -37,7 +37,7 @@ export class DashboardConfigurationController extends BaseController<DashboardCo
 		return instance;
 	}
 
-	public override async validatePut(
+	public override async validateEdit(
 		existingInstance: DashboardConfigurationModel,
 		newInstance: Partial<DashboardConfigurationModel>,
 		userId?: number,

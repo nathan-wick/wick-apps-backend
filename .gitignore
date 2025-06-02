@@ -1,3 +1,7 @@
 coverage
 node_modules
-distributable
+
+distributable/*
+!distributable/.gitkeep
+
+source/secrets.ts

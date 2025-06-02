@@ -4,7 +4,6 @@ import SessionModel from '../models/session';
 import type { SessionToken } from '../interfaces/session-token';
 import { Shield } from './shield';
 import jwt from 'jsonwebtoken';
-import sendErrorResponse from './send-error-response';
 
 export default class SessionTokenValidator {
 	private key: string;
@@ -19,40 +18,40 @@ export default class SessionTokenValidator {
 			response: Response,
 			next: NextFunction,
 		) => {
-			try {
-				const codedSessionToken = request.header(`Session-Token`);
-				if (!codedSessionToken) {
-					// eslint-disable-next-line no-undefined
-					request.validatedSession = undefined;
-					return next();
-				}
-				delete request.headers[`Session-Token`];
-				const decodedSessionToken =
-					this.decodeSessionToken(codedSessionToken);
-				await SessionModel.findByPk(decodedSessionToken.sessionId).then(
-					(session) => {
-						if (!session?.userId) {
-							const error: HttpStatus = {
-								code: 401,
-								message: `Invalid session token.`,
-							};
-							throw error;
-						}
-						if (session.expires < new Date()) {
-							const error: HttpStatus = {
-								code: 401,
-								message: `Session expired.`,
-							};
-							throw error;
-						}
-						request.validatedSession = session;
-					},
-				);
-				// TODO This is sketch. Might cause async related errors
+			const codedSessionToken = request.header(`Session-Token`);
+			if (!codedSessionToken) {
+				// eslint-disable-next-line no-undefined
+				request.validatedSession = undefined;
 				return next();
-			} catch (error) {
-				return sendErrorResponse(response, error as HttpStatus);
 			}
+			delete request.headers[`Session-Token`];
+			const decodedSessionToken =
+				this.decodeSessionToken(codedSessionToken);
+			await SessionModel.findByPk(decodedSessionToken.sessionId).then(
+				(session) => {
+					if (!session?.userId) {
+						const error: HttpStatus = {
+							code: 401,
+							message: `Invalid session token.`,
+						};
+						response
+							.status(error.code)
+							.send({ message: error.message });
+					}
+					if (session!.expires < new Date()) {
+						const error: HttpStatus = {
+							code: 401,
+							message: `Session expired.`,
+						};
+						response
+							.status(error.code)
+							.send({ message: error.message });
+					}
+					request.validatedSession = session!;
+				},
+			);
+			// TODO This is sketch. Might cause async related errors
+			return next();
 		};
 		return validateSessionToken;
 	}

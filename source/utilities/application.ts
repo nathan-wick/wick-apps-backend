@@ -7,6 +7,7 @@ import PreferencesModel, {
 import RateLimiter, { RateLimiterOptions } from './rate-limiter';
 import SessionModel, { initializeSessionModel } from '../models/session';
 import UserModel, { initializeUserModel } from '../models/user';
+import express, { NextFunction, Request, Response } from 'express';
 import { BaseController } from '../controllers/base';
 import { DashboardConfigurationController } from '../controllers/dashboard-configuration';
 import type { HttpStatus } from '../interfaces/http-status';
@@ -16,11 +17,9 @@ import { Sequelize } from 'sequelize';
 import { SessionController } from '../controllers/session';
 import { UserController } from '../controllers/user';
 import cors from 'cors';
-import express from 'express';
 import { largeFileBytes } from '../constants/file-sizes';
 import { mainRouter } from '../constants/main-router';
 import nodemailer from 'nodemailer';
-import sendErrorResponse from './send-error-response';
 import { sessionTokenValidator } from '../constants/session-token-validator';
 
 export interface ApplicationConfiguration {
@@ -58,7 +57,9 @@ export class Application {
 	constructor(configuration: ApplicationConfiguration) {
 		this.express = express();
 		this.configuration = configuration;
-		this.rateLimiter = new RateLimiter(this.configuration.rateLimiterOptions);
+		this.rateLimiter = new RateLimiter(
+			this.configuration.rateLimiterOptions,
+		);
 	}
 
 	public async start() {
@@ -154,9 +155,10 @@ export class Application {
 					code: 404,
 					message: `The resource you are looking for could not be found.`,
 				};
-				sendErrorResponse(response, error);
+				response.status(error.code).send({ message: error.message });
 			},
 		);
+		this.express.use(this.handleError);
 		this.express.disable(`x-powered-by`);
 		if (this.configuration.port) {
 			this.server = this.express.listen(this.configuration.port);
@@ -190,6 +192,18 @@ export class Application {
 		UserModel.hasMany(DashboardConfigurationModel, {
 			as: `dashboardConfigurations`,
 			foreignKey: `userId`,
+		});
+	}
+
+	private handleError(
+		err: any,
+		req: Request,
+		res: Response,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		next: NextFunction,
+	) {
+		res.status(err.code ?? 500).send({
+			message: err.message ?? `Unexpected error.`,
 		});
 	}
 }

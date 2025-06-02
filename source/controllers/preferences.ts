@@ -22,7 +22,7 @@ export class PreferencesController extends BaseController<PreferencesModel> {
 		return instance;
 	}
 
-	public override async validatePost(
+	public override async validateCreate(
 		instance: PreferencesModel,
 		userId?: number,
 	): Promise<PreferencesModel> {
@@ -37,7 +37,7 @@ export class PreferencesController extends BaseController<PreferencesModel> {
 		return instance;
 	}
 
-	public override async validatePut(
+	public override async validateEdit(
 		existingInstance: PreferencesModel,
 		newInstance: Partial<PreferencesModel>,
 		userId?: number,

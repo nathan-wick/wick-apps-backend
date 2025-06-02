@@ -51,8 +51,8 @@ export abstract class BaseControllerTest<Type extends Model> {
 		this.testTestEnvironment();
 		this.testGetByPrimaryKey();
 		this.testGet();
-		this.testPost();
-		this.testPut();
+		this.testCreate();
+		this.testEdit();
 		this.testDelete();
 	}
 
@@ -431,48 +431,51 @@ export abstract class BaseControllerTest<Type extends Model> {
 		});
 	}
 
-	private testPost() {
-		describe(`post`, () => {
+	private testCreate() {
+		describe(`create`, () => {
 			beforeEach(() => {
-				jest.spyOn(this.controller, `validatePost`).mockImplementation(
-					async (instance) => instance,
-				);
+				jest.spyOn(
+					this.controller,
+					`validateCreate`,
+				).mockImplementation(async (instance) => instance);
 			});
 			afterEach(() => {
 				jest.restoreAllMocks();
 			});
-			if (this.controller.options.enablePost) {
+			if (this.controller.options.enableCreate) {
 				const anonymousAccess = this.controller.options
-					.allowAnonymousPost
+					.allowAnonymousCreate
 					? `allow`
 					: `deny`;
 				it(`should ${anonymousAccess} anonymous access`, async () => {
-					const postable =
+					const createable =
 						await DatabaseHelper.createMinimalTestInstance(
 							this.controller.model,
 						);
 					const response = await request(this.application.express)
 						.post(`/${this.controller.kebabCasedTypeName}`)
-						.send(postable);
-					if (this.controller.options.allowAnonymousPost) {
+						.send(createable);
+					if (this.controller.options.allowAnonymousCreate) {
 						expect(response.status).toBe(201);
 					} else {
 						expect(response.status).toBe(403);
 					}
 				});
 				it(`should create`, async () => {
-					const postable =
+					const createable =
 						await DatabaseHelper.createMinimalTestInstance(
 							this.controller.model,
 						);
 					const response = await request(this.application.express)
 						.post(`/${this.controller.kebabCasedTypeName}`)
-						.send(postable)
+						.send(createable)
 						.set(this.testUserSessionTokenHeader);
 					expect(response.status).toBe(201);
-					Object.keys(this.jsonDeepClone(postable)).forEach((key) => {
-						expect(response.body).toHaveProperty(key);
-					});
+					Object.keys(this.jsonDeepClone(createable)).forEach(
+						(key) => {
+							expect(response.body).toHaveProperty(key);
+						},
+					);
 					expect(
 						response.body[
 							this.controller.model.primaryKeyAttribute
@@ -490,19 +493,19 @@ export abstract class BaseControllerTest<Type extends Model> {
 		});
 	}
 
-	private testPut() {
-		describe(`put`, () => {
+	private testEdit() {
+		describe(`edit`, () => {
 			beforeEach(() => {
-				jest.spyOn(this.controller, `validatePut`).mockImplementation(
+				jest.spyOn(this.controller, `validateEdit`).mockImplementation(
 					async (existingInstance, newInstance) => newInstance,
 				);
 			});
 			afterEach(() => {
 				jest.restoreAllMocks();
 			});
-			if (this.controller.options.enablePut) {
+			if (this.controller.options.enableEdit) {
 				const anonymousAccess = this.controller.options
-					.allowAnonymousPut
+					.allowAnonymousEdit
 					? `allow`
 					: `deny`;
 				it(`should ${anonymousAccess} anonymous access`, async () => {
@@ -510,7 +513,7 @@ export abstract class BaseControllerTest<Type extends Model> {
 					const response = await request(this.application.express)
 						.put(`/${this.controller.kebabCasedTypeName}`)
 						.send(updatedInstance);
-					if (this.controller.options.allowAnonymousPost) {
+					if (this.controller.options.allowAnonymousCreate) {
 						expect(response.status).toBe(200);
 					} else {
 						expect(response.status).toBe(403);

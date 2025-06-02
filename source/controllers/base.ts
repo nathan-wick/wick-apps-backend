@@ -7,31 +7,38 @@ import {
 	Op,
 	WhereOptions,
 } from 'sequelize';
-import { type Request, type Response, Router } from 'express';
+import {
+	NextFunction,
+	type Request,
+	RequestHandler,
+	type Response,
+	Router,
+} from 'express';
+import { AsyncRequestHandler } from '../types/async-request-handler';
 import type { HttpStatus } from '../interfaces/http-status';
+import { RouterMethod } from '../types/router-method';
 import { mainRouter } from '../constants/main-router';
-import sendErrorResponse from '../utilities/send-error-response';
 
 export interface BaseControllerOptions {
+	allowAnonymousCreate: boolean;
 	allowAnonymousDelete: boolean;
+	allowAnonymousEdit: boolean;
 	allowAnonymousGet: boolean;
-	allowAnonymousPost: boolean;
-	allowAnonymousPut: boolean;
+	enableCreate: boolean;
 	enableDelete: boolean;
+	enableEdit: boolean;
 	enableGet: boolean;
-	enablePost: boolean;
-	enablePut: boolean;
 }
 
 export const defaultBaseControllerOptions: BaseControllerOptions = {
+	allowAnonymousCreate: false,
 	allowAnonymousDelete: false,
+	allowAnonymousEdit: false,
 	allowAnonymousGet: false,
-	allowAnonymousPost: false,
-	allowAnonymousPut: false,
+	enableCreate: true,
 	enableDelete: true,
+	enableEdit: true,
 	enableGet: true,
-	enablePost: true,
-	enablePut: true,
 };
 
 export abstract class BaseController<Type extends Model> {
@@ -68,6 +75,7 @@ export abstract class BaseController<Type extends Model> {
 			)
 			.replace(/-model$/u, ``);
 		this.lowerCasedTypeName = this.model.name.replace(/-model$/u, ``);
+		this.wrapMethodsWithAsyncErrorHandlers();
 		this.initializeRoutes();
 	}
 
@@ -76,12 +84,15 @@ export abstract class BaseController<Type extends Model> {
 		return instance;
 	}
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	public async validatePost(instance: Type, userId?: number): Promise<Type> {
+	public async validateCreate(
+		instance: Type,
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		userId?: number,
+	): Promise<Type> {
 		return instance;
 	}
 
-	public async validatePut(
+	public async validateEdit(
 		existingInstance: Type,
 		newInstance: Partial<Type>,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -100,247 +111,253 @@ export abstract class BaseController<Type extends Model> {
 
 	protected initializeAdditionalRoutes(): void {}
 
-	private async getByPrimaryKey(request: Request, response: Response) {
-		try {
-			const userId = request.validatedSession?.userId;
-			if (!userId && !this.options.allowAnonymousGet) {
-				const error: HttpStatus = {
-					code: 403,
-					message: `Please sign in to get ${this.titleCasedTypeName}.`,
-				};
-				throw error;
-			}
-			const primaryKey = Number(request.params.id ?? 0);
-			if (primaryKey < 1) {
-				const error: HttpStatus = {
-					code: 400,
-					message: `Invalid ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
-				};
-				throw error;
-			}
-			const attributes = request.query.attributes
-				? Array.isArray(request.query.attributes)
-					? (request.query.attributes as string[])
-					: [request.query.attributes as string]
-				: [];
-			const instance = await this.model.findByPk(
-				primaryKey,
-				this.getFindOptions(attributes),
-			);
-			if (!instance) {
-				const error: HttpStatus = {
-					code: 404,
-					message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${primaryKey} not found.`,
-				};
-				throw error;
-			}
-			const validatedInstance = await this.validateGet(instance, userId);
-			response.status(200).send(validatedInstance);
-		} catch (error) {
-			sendErrorResponse(response, error as HttpStatus);
+	protected async getByPrimaryKey(request: Request, response: Response) {
+		const userId = request.validatedSession?.userId;
+		if (!userId && !this.options.allowAnonymousGet) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Please sign in to get ${this.titleCasedTypeName}.`,
+			};
+			throw error;
 		}
+		const primaryKey = Number(request.params.id ?? 0);
+		if (primaryKey < 1) {
+			const error: HttpStatus = {
+				code: 400,
+				message: `Invalid ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
+			};
+			throw error;
+		}
+		const attributes = request.query.attributes
+			? Array.isArray(request.query.attributes)
+				? (request.query.attributes as string[])
+				: [request.query.attributes as string]
+			: [];
+		const instance = await this.model.findByPk(
+			primaryKey,
+			this.getFindOptions(attributes),
+		);
+		if (!instance) {
+			const error: HttpStatus = {
+				code: 404,
+				message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${primaryKey} not found.`,
+			};
+			throw error;
+		}
+		const validatedInstance = await this.validateGet(instance, userId);
+		response.status(200).send(validatedInstance);
 	}
 
 	private async get(request: Request, response: Response) {
-		try {
-			const userId = request.validatedSession?.userId;
-			if (!userId && !this.options.allowAnonymousGet) {
-				const error: HttpStatus = {
-					code: 403,
-					message: `Please sign in to get ${this.titleCasedTypeName}.`,
-				};
-				throw error;
-			}
-			const minimumPageSize = 1;
-			const maximumPageSize = 100;
-			const pageSize = Number(request.query.pageSize ?? maximumPageSize);
-			if (pageSize < minimumPageSize) {
-				const error: HttpStatus = {
-					code: 400,
-					message: `Page size cannot be less than ${minimumPageSize}.`,
-				};
-				throw error;
-			}
-			if (pageSize > maximumPageSize) {
-				const error: HttpStatus = {
-					code: 400,
-					message: `Page size cannot be greater than ${maximumPageSize}.`,
-				};
-				throw error;
-			}
-			const firstPage = 1;
-			const pageNumber = Number(request.query.pageNumber ?? firstPage);
-			if (pageNumber < firstPage) {
-				const error: HttpStatus = {
-					code: 400,
-					message: `Page number cannot be less than ${firstPage}.`,
-				};
-				throw error;
-			}
-			const attributes = request.query.attributes
-				? Array.isArray(request.query.attributes)
-					? (request.query.attributes as string[])
-					: [request.query.attributes as string]
-				: [];
-			const where = request.query.where
-				? this.buildWhereOptions(
-						decodeURIComponent(String(request.query.where)),
-					)
-				: undefined;
-			const orderDirection =
-				String(request.query.orderDirection).toUpperCase() === `DESC`
-					? `DESC`
-					: `ASC`;
-			const orderBy = request.query.orderBy
-				? String(request.query.orderBy)
-				: this.model.primaryKeyAttribute;
-			this.validateAttribute(this.model, orderBy);
-			const { count, rows } = await this.model.findAndCountAll({
-				...this.getFindOptions(attributes),
-				limit: pageSize,
-				offset: pageSize * (pageNumber - 1),
-				order: [[orderBy, orderDirection]],
-				where,
-			});
-			const validatedInstances = await Promise.all(
-				rows.map((instance) => this.validateGet(instance, userId)),
-			);
-			response.status(200).send({
-				instances: validatedInstances,
-				totalInstances: count,
-			});
-		} catch (error) {
-			sendErrorResponse(response, error as HttpStatus);
+		const userId = request.validatedSession?.userId;
+		if (!userId && !this.options.allowAnonymousGet) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Please sign in to get ${this.titleCasedTypeName}.`,
+			};
+			throw error;
 		}
+		const minimumPageSize = 1;
+		const maximumPageSize = 100;
+		const pageSize = Number(request.query.pageSize ?? maximumPageSize);
+		if (pageSize < minimumPageSize) {
+			const error: HttpStatus = {
+				code: 400,
+				message: `Page size cannot be less than ${minimumPageSize}.`,
+			};
+			throw error;
+		}
+		if (pageSize > maximumPageSize) {
+			const error: HttpStatus = {
+				code: 400,
+				message: `Page size cannot be greater than ${maximumPageSize}.`,
+			};
+			throw error;
+		}
+		const firstPage = 1;
+		const pageNumber = Number(request.query.pageNumber ?? firstPage);
+		if (pageNumber < firstPage) {
+			const error: HttpStatus = {
+				code: 400,
+				message: `Page number cannot be less than ${firstPage}.`,
+			};
+			throw error;
+		}
+		const attributes = request.query.attributes
+			? Array.isArray(request.query.attributes)
+				? (request.query.attributes as string[])
+				: [request.query.attributes as string]
+			: [];
+		const where = request.query.where
+			? this.buildWhereOptions(
+					decodeURIComponent(String(request.query.where)),
+				)
+			: undefined;
+		const orderDirection =
+			String(request.query.orderDirection).toUpperCase() === `DESC`
+				? `DESC`
+				: `ASC`;
+		const orderBy = request.query.orderBy
+			? String(request.query.orderBy)
+			: this.model.primaryKeyAttribute;
+		this.validateAttribute(this.model, orderBy);
+		const { count, rows } = await this.model.findAndCountAll({
+			...this.getFindOptions(attributes),
+			limit: pageSize,
+			offset: pageSize * (pageNumber - 1),
+			order: [[orderBy, orderDirection]],
+			where,
+		});
+		const validatedInstances = await Promise.all(
+			rows.map((instance) => this.validateGet(instance, userId)),
+		);
+		response.status(200).send({
+			instances: validatedInstances,
+			totalInstances: count,
+		});
 	}
 
-	private async post(request: Request, response: Response) {
-		try {
-			const userId = request.validatedSession?.userId;
-			if (!userId && !this.options.allowAnonymousPost) {
-				const error: HttpStatus = {
-					code: 403,
-					message: `Please sign in to post a ${this.titleCasedTypeName}.`,
-				};
-				throw error;
-			}
-			const instance = request.body;
-			if (!instance) {
-				const error: HttpStatus = {
-					code: 400,
-					message: `Invalid ${this.titleCasedTypeName}.`,
-				};
-				throw error;
-			}
-			const validatedInstance = await this.validatePost(instance, userId);
-			const createdInstance = await this.model.create(
-				validatedInstance as any,
-			);
-			response.status(201).send(createdInstance);
-		} catch (error) {
-			sendErrorResponse(response, error as HttpStatus);
+	private async create(request: Request, response: Response) {
+		const userId = request.validatedSession?.userId;
+		if (!userId && !this.options.allowAnonymousCreate) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Please sign in to create a ${this.titleCasedTypeName}.`,
+			};
+			throw error;
 		}
+		const instance = request.body;
+		if (!instance) {
+			const error: HttpStatus = {
+				code: 400,
+				message: `Invalid ${this.titleCasedTypeName}.`,
+			};
+			throw error;
+		}
+		const validatedInstance = await this.validateCreate(instance, userId);
+		const createdInstance = await this.model.create(
+			validatedInstance as any,
+		);
+		response.status(201).send(createdInstance);
 	}
 
-	private async put(request: Request, response: Response) {
-		try {
-			const userId = request.validatedSession?.userId;
-			if (!userId && !this.options.allowAnonymousPut) {
-				const error: HttpStatus = {
-					code: 403,
-					message: `Please sign in to put a ${this.titleCasedTypeName}.`,
-				};
-				throw error;
-			}
-			const attributes = request.query.attributes
-				? Array.isArray(request.query.attributes)
-					? (request.query.attributes as string[])
-					: [request.query.attributes as string]
-				: [];
-			attributes.forEach((attribute) =>
-				this.validateAttribute(this.model, attribute),
-			);
-			const newInstance = request.body;
-			if (!newInstance) {
-				const error: HttpStatus = {
-					code: 400,
-					message: `Missing ${this.titleCasedTypeName}.`,
-				};
-				throw error;
-			}
-			const primaryKeyValue: number | undefined =
-				newInstance[this.model.primaryKeyAttribute];
-			if (!primaryKeyValue) {
-				const error: HttpStatus = {
-					code: 400,
-					message: `Missing ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
-				};
-				throw error;
-			}
-			if (primaryKeyValue < 1) {
-				const error: HttpStatus = {
-					code: 400,
-					message: `Invalid ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
-				};
-				throw error;
-			}
-			const existingInstance = await this.model.findByPk(primaryKeyValue);
-			if (!existingInstance) {
-				const error: HttpStatus = {
-					code: 404,
-					// eslint-disable-next-line max-len
-					message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${primaryKeyValue} not found.`,
-				};
-				throw error;
-			}
-			const validatedInstance = await this.validatePut(
-				existingInstance,
-				newInstance,
-				userId,
-			);
-			await existingInstance.update(validatedInstance, {
-				fields: attributes || undefined,
-			});
-			response.status(200).send(existingInstance);
-		} catch (error) {
-			sendErrorResponse(response, error as HttpStatus);
+	private async edit(request: Request, response: Response) {
+		const userId = request.validatedSession?.userId;
+		if (!userId && !this.options.allowAnonymousEdit) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Please sign in to edit a ${this.titleCasedTypeName}.`,
+			};
+			throw error;
 		}
+		const attributes = request.query.attributes
+			? Array.isArray(request.query.attributes)
+				? (request.query.attributes as string[])
+				: [request.query.attributes as string]
+			: [];
+		attributes.forEach((attribute) =>
+			this.validateAttribute(this.model, attribute),
+		);
+		const newInstance = request.body;
+		if (!newInstance) {
+			const error: HttpStatus = {
+				code: 400,
+				message: `Missing ${this.titleCasedTypeName}.`,
+			};
+			throw error;
+		}
+		const primaryKeyValue: number | undefined =
+			newInstance[this.model.primaryKeyAttribute];
+		if (!primaryKeyValue) {
+			const error: HttpStatus = {
+				code: 400,
+				message: `Missing ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
+			};
+			throw error;
+		}
+		if (primaryKeyValue < 1) {
+			const error: HttpStatus = {
+				code: 400,
+				message: `Invalid ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
+			};
+			throw error;
+		}
+		const existingInstance = await this.model.findByPk(primaryKeyValue);
+		if (!existingInstance) {
+			const error: HttpStatus = {
+				code: 404,
+				// eslint-disable-next-line max-len
+				message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${primaryKeyValue} not found.`,
+			};
+			throw error;
+		}
+		const validatedInstance = await this.validateEdit(
+			existingInstance,
+			newInstance,
+			userId,
+		);
+		await existingInstance.update(validatedInstance, {
+			fields: attributes || undefined,
+		});
+		response.status(200).send(existingInstance);
 	}
 
 	private async delete(request: Request, response: Response) {
-		try {
-			const userId = request.validatedSession?.userId;
-			if (!userId && !this.options.allowAnonymousDelete) {
-				const error: HttpStatus = {
-					code: 403,
-					message: `Please sign in to delete a ${this.titleCasedTypeName}.`,
-				};
-				throw error;
-			}
-			const instanceId = Number(request.params.id);
-			if (instanceId < 1) {
-				const error: HttpStatus = {
-					code: 400,
-					message: `Invalid ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
-				};
-				throw error;
-			}
-			const instance = await this.model.findByPk(instanceId);
-			if (!instance) {
-				const error: HttpStatus = {
-					code: 404,
-					message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${instanceId} not found.`,
-				};
-				throw error;
-			}
-			const validatedInstance = await this.validateDelete(
-				instance,
-				userId,
+		const userId = request.validatedSession?.userId;
+		if (!userId && !this.options.allowAnonymousDelete) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Please sign in to delete a ${this.titleCasedTypeName}.`,
+			};
+			throw error;
+		}
+		const instanceId = Number(request.params.id);
+		if (instanceId < 1) {
+			const error: HttpStatus = {
+				code: 400,
+				message: `Invalid ${this.titleCasedTypeName} ${this.primaryKeyAttribute}.`,
+			};
+			throw error;
+		}
+		const instance = await this.model.findByPk(instanceId);
+		if (!instance) {
+			const error: HttpStatus = {
+				code: 404,
+				message: `${this.titleCasedTypeName} with ${this.primaryKeyAttribute} ${instanceId} not found.`,
+			};
+			throw error;
+		}
+		const validatedInstance = await this.validateDelete(instance, userId);
+		await validatedInstance.destroy();
+		response.status(200).send();
+	}
+
+	private wrapMethodsWithAsyncErrorHandlers() {
+		const methodsToWrap = [
+			`get`,
+			`post`,
+			`put`,
+			`delete`,
+			`patch`,
+		] as const;
+
+		for (const method of methodsToWrap) {
+			const original = (this.router[method] as RouterMethod).bind(
+				this.router,
 			);
-			await validatedInstance.destroy();
-			response.status(200).send();
-		} catch (error) {
-			sendErrorResponse(response, error as HttpStatus);
+
+			(this.router[method] as RouterMethod) = (
+				path: string,
+				...handlers: Array<RequestHandler | AsyncRequestHandler>
+			): Router => {
+				const wrappedHandlers = handlers.map((handler) =>
+					this.isAsync(handler)
+						? this.asyncErrorHandler(handler as AsyncRequestHandler)
+						: handler,
+				);
+
+				return (original as any)(path, ...wrappedHandlers);
+			};
 		}
 	}
 
@@ -350,11 +367,11 @@ export abstract class BaseController<Type extends Model> {
 			this.router.get(`/:id`, this.getByPrimaryKey.bind(this));
 			this.router.get(`/`, this.get.bind(this));
 		}
-		if (this.options.enablePost) {
-			this.router.post(`/`, this.post.bind(this));
+		if (this.options.enableCreate) {
+			this.router.post(`/`, this.create.bind(this));
 		}
-		if (this.options.enablePut) {
-			this.router.put(`/`, this.put.bind(this));
+		if (this.options.enableEdit) {
+			this.router.put(`/`, this.edit.bind(this));
 		}
 		if (this.options.enableDelete) {
 			this.router.delete(`/:id`, this.delete.bind(this));
@@ -687,4 +704,13 @@ export abstract class BaseController<Type extends Model> {
 		}
 		return value;
 	}
+
+	private isAsync(method: any): boolean {
+		return method && method.constructor.name === `AsyncFunction`;
+	}
+
+	private asyncErrorHandler =
+		(method: AsyncRequestHandler) =>
+		(req: Request, res: Response, next: NextFunction) =>
+			Promise.resolve(method(req, res, next)).catch(next);
 }

@@ -4,7 +4,7 @@
 		"geoip",
 		"Includeable",
 		"includeables",
-		"Postable",
+		"Createable",
 		"tokenable",
 		"Vator",
 		"wickapps"
