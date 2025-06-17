@@ -59,5 +59,10 @@
 		"nodemailer": "^6.10.0",
 		"sequelize": "^6.37.5",
 		"useragent": "^2.3.0"
-	}
+	},
+	"files": [
+		"distributable",
+		"README.md",
+		"LICENSE"
+	]
 }
