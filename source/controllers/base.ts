@@ -8,7 +8,7 @@ import {
 	WhereOptions,
 } from 'sequelize';
 import {
-	NextFunction,
+	type NextFunction,
 	type Request,
 	RequestHandler,
 	type Response,
