@@ -7,7 +7,11 @@ import PreferencesModel, {
 import RateLimiter, { RateLimiterOptions } from './rate-limiter';
 import SessionModel, { initializeSessionModel } from '../models/session';
 import UserModel, { initializeUserModel } from '../models/user';
-import express, { type NextFunction, type Request, type Response } from 'express';
+import express, {
+	type NextFunction,
+	type Request,
+	type Response,
+} from 'express';
 import { BaseController } from '../controllers/base';
 import { DashboardConfigurationController } from '../controllers/dashboard-configuration';
 import type { HttpStatus } from '../interfaces/http-status';
