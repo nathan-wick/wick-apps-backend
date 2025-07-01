@@ -14,10 +14,11 @@
 	"scripts": {
 		"lint": "eslint . --ext .ts",
 		"format": "prettier --write .",
-		"build": "tsc",
+		"clear-distributable": "node -e \"require('fs').rmSync('./distributable', { recursive: true, force: true })\"",
+		"build-distributable": "npm run clear-distributable && tsc",
 		"test": "npx jest --clearCache && jest --coverage --detectOpenHandles",
 		"precommit": "npm run format && npm run test",
-		"release": "npm run build && npm publish"
+		"release": "npm run precommit && npm run build-distributable && npm publish"
 	},
 	"repository": {
 		"type": "git",
