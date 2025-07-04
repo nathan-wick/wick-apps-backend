@@ -22,12 +22,13 @@
 
 		/* Transpiling */
 		"outDir": "distributable",
+		"rootDir": "source",
 		"sourceMap": true,
 
 		/* Library: */
 		"declaration": true,
 		"lib": ["ES2022"]
 	},
-	"include": ["source/**/*", "tests/**/*"],
-	"exclude": ["node_modules", "distributable"]
+	"include": ["source/**/*",],
+	"exclude": ["tests", "node_modules", "distributable"]
 }
