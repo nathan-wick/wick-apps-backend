@@ -17,6 +17,10 @@ export const testApplicationConfiguration: ApplicationConfiguration = {
 		port: 587,
 	},
 	enableRateLimiter: true,
+	loggingOptions: {
+		application: false,
+		requests: false,
+	},
 	name: `Test App`,
 	port: null,
 	rateLimiterOptions: defaultRateLimiterOptions,

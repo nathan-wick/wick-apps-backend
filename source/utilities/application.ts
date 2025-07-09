@@ -43,6 +43,10 @@ export interface ApplicationConfiguration {
 	name: string;
 	port: number | null;
 	rateLimiterOptions?: RateLimiterOptions;
+	loggingOptions?: {
+		application: boolean;
+		requests: boolean;
+	};
 }
 
 export let applicationConfiguration: ApplicationConfiguration;
@@ -67,6 +71,9 @@ export class Application {
 	}
 
 	public async start() {
+		if (this.configuration.loggingOptions?.application) {
+			console.log(`Starting the application.`);
+		}
 		try {
 			this.initializeGlobalVariables();
 			this.initializeModels();
@@ -78,20 +85,24 @@ export class Application {
 			}
 			this.initializeExpress();
 		} catch (error) {
-			// eslint-disable-next-line no-console
 			console.error(`Error while starting the application.`, error);
 		}
 	}
 
 	public async stop() {
+		if (this.configuration.loggingOptions?.application) {
+			console.log(`Stopping the application.`);
+		}
 		try {
 			await database.close();
 			if (this.configuration.enableRateLimiter) {
 				this.rateLimiter.stopOpenHandles();
 			}
 			this.server?.close();
+			if (this.configuration.loggingOptions?.application) {
+				console.log(`Stopped the application.`);
+			}
 		} catch (error) {
-			// eslint-disable-next-line no-console
 			console.error(`Error while stopping the application.`, error);
 		}
 	}
@@ -152,6 +163,19 @@ export class Application {
 			this.express.use(this.rateLimiter.middleware());
 		}
 		this.express.use(sessionTokenValidator.middleware());
+		if (this.configuration.loggingOptions?.requests) {
+			this.express.use((request: Request, response: Response, next: NextFunction) => {
+				console.log({
+					body: request.body,
+					method: request.method,
+					params: request.params,
+					path: request.path,
+					query: request.query,
+					timestamp: new Date().toISOString(),
+				  });
+				next();
+			});
+		}
 		this.express.use(mainRouter);
 		this.express.use(
 			(request: express.Request, response: express.Response) => {
@@ -165,7 +189,13 @@ export class Application {
 		this.express.use(this.handleError);
 		this.express.disable(`x-powered-by`);
 		if (this.configuration.port) {
-			this.server = this.express.listen(this.configuration.port);
+			this.server = this.express.listen(this.configuration.port, () => {
+				if (this.configuration.loggingOptions?.application) {
+					console.log(
+						`Application running on port ${this.configuration.port}.`,
+					);
+				}
+			});
 		}
 	}
 

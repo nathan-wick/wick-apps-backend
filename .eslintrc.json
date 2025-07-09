@@ -13,7 +13,7 @@
 		"max-params": ["warn", 6],
 		"max-statements": "off",
 		"new-cap": "off",
-		"no-console": "warn",
+		"no-console": "off",
 		"no-magic-numbers": "off",
 		"no-plusplus": "off",
 		"no-warning-comments": "off",
