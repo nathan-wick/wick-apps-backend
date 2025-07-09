@@ -164,17 +164,19 @@ export class Application {
 		}
 		this.express.use(sessionTokenValidator.middleware());
 		if (this.configuration.loggingOptions?.requests) {
-			this.express.use((request: Request, response: Response, next: NextFunction) => {
-				console.log({
-					body: request.body,
-					method: request.method,
-					params: request.params,
-					path: request.path,
-					query: request.query,
-					timestamp: new Date().toISOString(),
-				  });
-				next();
-			});
+			this.express.use(
+				(request: Request, response: Response, next: NextFunction) => {
+					console.log({
+						body: request.body,
+						method: request.method,
+						params: request.params,
+						path: request.path,
+						query: request.query,
+						timestamp: new Date().toISOString(),
+					});
+					next();
+				},
+			);
 		}
 		this.express.use(mainRouter);
 		this.express.use(
