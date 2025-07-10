@@ -20,6 +20,7 @@ export const testApplicationConfiguration: ApplicationConfiguration = {
 	loggingOptions: {
 		application: false,
 		requests: false,
+		responses: true,
 	},
 	name: `Test App`,
 	port: null,

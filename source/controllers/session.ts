@@ -100,7 +100,7 @@ We will never ask for this code via phone, email, or chat.`,
 	}
 
 	private async signIn(request: Request, response: Response): Promise<void> {
-		const { sessionId, code } = request.body;
+		const sessionId = String(request.body.sessionId);
 		if (!sessionId) {
 			const error: HttpStatus = {
 				code: 400,
@@ -108,6 +108,7 @@ We will never ask for this code via phone, email, or chat.`,
 			};
 			throw error;
 		}
+		const code = String(request.body.code);
 		if (!code) {
 			const error: HttpStatus = {
 				code: 400,

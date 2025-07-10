@@ -46,6 +46,7 @@ export interface ApplicationConfiguration {
 	loggingOptions?: {
 		application: boolean;
 		requests: boolean;
+		responses: boolean;
 	};
 }
 
@@ -72,7 +73,7 @@ export class Application {
 
 	public async start() {
 		if (this.configuration.loggingOptions?.application) {
-			console.log(`Starting the application.`);
+			console.log(`(application)`, `Starting the application.`);
 		}
 		try {
 			this.initializeGlobalVariables();
@@ -91,7 +92,7 @@ export class Application {
 
 	public async stop() {
 		if (this.configuration.loggingOptions?.application) {
-			console.log(`Stopping the application.`);
+			console.log(`(application)`, `Stopping the application.`);
 		}
 		try {
 			await database.close();
@@ -100,7 +101,7 @@ export class Application {
 			}
 			this.server?.close();
 			if (this.configuration.loggingOptions?.application) {
-				console.log(`Stopped the application.`);
+				console.log(`(application)`, `Stopped the application.`);
 			}
 		} catch (error) {
 			console.error(`Error while stopping the application.`, error);
@@ -166,7 +167,7 @@ export class Application {
 		if (this.configuration.loggingOptions?.requests) {
 			this.express.use(
 				(request: Request, response: Response, next: NextFunction) => {
-					console.log({
+					console.log(`(request)`, {
 						body: request.body,
 						method: request.method,
 						params: request.params,
@@ -194,7 +195,8 @@ export class Application {
 			this.server = this.express.listen(this.configuration.port, () => {
 				if (this.configuration.loggingOptions?.application) {
 					console.log(
-						`Application running on port ${this.configuration.port}.`,
+						`(application)`,
+						`Started the application on port ${this.configuration.port}.`,
 					);
 				}
 			});
