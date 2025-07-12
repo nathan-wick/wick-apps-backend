@@ -16,7 +16,9 @@ export class UserControllerTest extends BaseControllerTest<UserModel> {
 		describe(`get by current session`, () => {
 			it(`should return the currently authenticated user`, async () => {
 				const response = await request(this.application.express)
-					.get(`/${this.controller.kebabCasedTypeName}/get-by-current-session`)
+					.get(
+						`/${this.controller.kebabCasedTypeName}/get-by-current-session`,
+					)
 					.set(this.testUserSessionTokenHeader);
 				expect(response.status).toBe(200);
 				const expectedUser = this.pickAttributes(
