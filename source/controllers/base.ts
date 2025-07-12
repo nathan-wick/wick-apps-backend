@@ -362,6 +362,7 @@ export abstract class BaseController<Type extends Model> {
 	}
 
 	private initializeRoutes() {
+		this.initializeAdditionalRoutes();
 		mainRouter.use(`/${this.kebabCasedTypeName}`, this.router);
 		if (this.options.enableGet) {
 			this.router.get(`/:id`, this.getByPrimaryKey.bind(this));
@@ -376,7 +377,6 @@ export abstract class BaseController<Type extends Model> {
 		if (this.options.enableDelete) {
 			this.router.delete(`/:id`, this.delete.bind(this));
 		}
-		this.initializeAdditionalRoutes();
 	}
 
 	private getFindOptions(

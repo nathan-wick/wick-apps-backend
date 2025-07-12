@@ -174,6 +174,7 @@ export class Application {
 						path: request.path,
 						query: request.query,
 						timestamp: new Date().toISOString(),
+						user: request.validatedSession?.userId,
 					});
 					next();
 				},

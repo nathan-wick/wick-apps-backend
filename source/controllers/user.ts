@@ -77,7 +77,15 @@ export class UserController extends BaseController<UserModel> {
 		request: Request,
 		response: Response,
 	): Promise<void> {
-		request.params.id = String(request.validatedSession?.userId);
+		const userId = request.validatedSession?.userId;
+		if (typeof userId !== `number` || isNaN(userId)) {
+			const error: HttpStatus = {
+				code: 403,
+				message: `Unauthorized or invalid session.`,
+			};
+			throw error;
+		}
+		request.params.id = String(userId);
 		this.getByPrimaryKey(request, response);
 	}
 }
