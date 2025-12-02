@@ -1,5 +1,6 @@
 import {
 	type Attributes,
+	DataTypes,
 	type Includeable,
 	type Model,
 	type ModelStatic,
@@ -85,10 +86,10 @@ export abstract class BaseController<Type extends Model> {
 	}
 
 	public async validateCreate(
-		instance: Type,
+		instance: Partial<Type>,
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 		userId?: number,
-	): Promise<Type> {
+	): Promise<Partial<Type>> {
 		return instance;
 	}
 
@@ -226,14 +227,15 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const instance = request.body;
-		if (!instance) {
+		const rawInstance = request.body;
+		if (!rawInstance) {
 			const error: HttpStatus = {
 				code: 400,
 				message: `Invalid ${this.titleCasedTypeName}.`,
 			};
 			throw error;
 		}
+		const instance = this.sanitizeInstance(rawInstance);
 		const validatedInstance = await this.validateCreate(instance, userId);
 		const createdInstance = await this.model.create(
 			validatedInstance as any,
@@ -250,16 +252,8 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const attributes = request.query.attributes
-			? Array.isArray(request.query.attributes)
-				? (request.query.attributes as string[])
-				: [request.query.attributes as string]
-			: [];
-		attributes.forEach((attribute) =>
-			this.validateAttribute(this.model, attribute),
-		);
-		const newInstance = request.body;
-		if (!newInstance) {
+		const rawInstance = request.body;
+		if (!rawInstance) {
 			const error: HttpStatus = {
 				code: 400,
 				message: `Missing ${this.titleCasedTypeName}.`,
@@ -267,7 +261,7 @@ export abstract class BaseController<Type extends Model> {
 			throw error;
 		}
 		const primaryKeyValue: number | undefined =
-			newInstance[this.model.primaryKeyAttribute];
+			rawInstance[this.model.primaryKeyAttribute];
 		if (!primaryKeyValue) {
 			const error: HttpStatus = {
 				code: 400,
@@ -293,12 +287,10 @@ export abstract class BaseController<Type extends Model> {
 		}
 		const validatedInstance = await this.validateEdit(
 			existingInstance,
-			newInstance,
+			this.sanitizeInstance(rawInstance),
 			userId,
 		);
-		await existingInstance.update(validatedInstance, {
-			fields: attributes || undefined,
-		});
+		await existingInstance.update(validatedInstance);
 		response.status(200).send(existingInstance);
 	}
 
@@ -330,6 +322,46 @@ export abstract class BaseController<Type extends Model> {
 		const validatedInstance = await this.validateDelete(instance, userId);
 		await validatedInstance.destroy();
 		response.status(200).send();
+	}
+
+	private sanitizeInstance(rawInstance: any): Partial<Type> {
+		if (!rawInstance || typeof rawInstance !== `object`) {
+			return rawInstance;
+		}
+		const sanitized: any = { ...rawInstance };
+		const modelAttributes = this.model.getAttributes();
+		for (const [key, attribute] of Object.entries(modelAttributes)) {
+			if (!(key in sanitized) || sanitized[key] === null) {
+				continue;
+			}
+			const value = sanitized[key];
+			const dataType = attribute.type;
+			if (dataType instanceof DataTypes.INTEGER || 
+				dataType instanceof DataTypes.BIGINT ||
+				dataType instanceof DataTypes.FLOAT ||
+				dataType instanceof DataTypes.DOUBLE ||
+				dataType instanceof DataTypes.DECIMAL) {
+				const num = Number(value);
+				if (!isNaN(num)) {
+					sanitized[key] = num;
+				}
+			} else if (dataType instanceof DataTypes.BOOLEAN) {
+				if (typeof value === `string`) {
+					sanitized[key] = value === `true` || value === `1`;
+				} else {
+					sanitized[key] = Boolean(value);
+				}
+			} else if (dataType instanceof DataTypes.DATE || 
+					dataType instanceof DataTypes.DATEONLY) {
+				if (typeof value === `string`) {
+					const date = new Date(value);
+					if (!isNaN(date.getTime())) {
+						sanitized[key] = date;
+					}
+				}
+			}
+		}
+		return sanitized as Partial<Type>;
 	}
 
 	private wrapMethodsWithAsyncErrorHandlers() {
@@ -711,6 +743,6 @@ export abstract class BaseController<Type extends Model> {
 
 	private asyncErrorHandler =
 		(method: AsyncRequestHandler) =>
-		(req: Request, res: Response, next: NextFunction) =>
-			Promise.resolve(method(req, res, next)).catch(next);
+		(request: Request, response: Response, next: NextFunction) =>
+			Promise.resolve(method(request, response, next)).catch(next);
 }
