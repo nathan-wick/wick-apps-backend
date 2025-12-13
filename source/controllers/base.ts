@@ -144,7 +144,10 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const validatedInstance: Type = await this.validateGet(instance, userId);
+		const validatedInstance: Type = await this.validateGet(
+			instance,
+			userId,
+		);
 		response.status(200).send(validatedInstance);
 	}
 
@@ -159,7 +162,9 @@ export abstract class BaseController<Type extends Model> {
 		}
 		const minimumPageSize: number = 1;
 		const maximumPageSize: number = 100;
-		const pageSize: number = Number(request.query.pageSize ?? maximumPageSize);
+		const pageSize: number = Number(
+			request.query.pageSize ?? maximumPageSize,
+		);
 		if (pageSize < minimumPageSize) {
 			const error: HttpStatus = {
 				code: 400,
@@ -188,7 +193,8 @@ export abstract class BaseController<Type extends Model> {
 				? (request.query.attributes as string[])
 				: [request.query.attributes as string]
 			: [];
-		const where: WhereOptions<Attributes<Type>> | undefined = request.query.where
+		const where: WhereOptions<Attributes<Type>> | undefined = request.query
+			.where
 			? this.buildWhereOptions(
 					decodeURIComponent(String(request.query.where)),
 				)
@@ -261,8 +267,9 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const primaryKeyValue: number | undefined =
-			(instance as any)[this.model.primaryKeyAttribute];
+		const primaryKeyValue: number | undefined = (instance as any)[
+			this.model.primaryKeyAttribute
+		];
 		if (!primaryKeyValue) {
 			const error: HttpStatus = {
 				code: 400,
@@ -277,7 +284,8 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const existingInstance: Type | null = await this.model.findByPk(primaryKeyValue);
+		const existingInstance: Type | null =
+			await this.model.findByPk(primaryKeyValue);
 		if (!existingInstance) {
 			const error: HttpStatus = {
 				code: 404,
@@ -321,7 +329,10 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const validatedInstance: Type = await this.validateDelete(instance, userId);
+		const validatedInstance: Type = await this.validateDelete(
+			instance,
+			userId,
+		);
 		await validatedInstance.destroy();
 		response.status(200).send();
 	}

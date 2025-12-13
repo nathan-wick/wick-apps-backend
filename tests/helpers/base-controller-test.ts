@@ -534,7 +534,10 @@ export abstract class BaseControllerTest<Type extends Model> {
 						this.jsonDeepClone(updatedInstance);
 					allAttributes.forEach((attribute) => {
 						expect(response.body).toHaveProperty(attribute);
-						if (attribute === `createdAt` || attribute === `updatedAt`) {
+						if (
+							attribute === `createdAt` ||
+							attribute === `updatedAt`
+						) {
 							return;
 						}
 						expect(response.body[attribute]).toEqual(
