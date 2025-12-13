@@ -1,6 +1,5 @@
 import {
 	type Attributes,
-	DataTypes,
 	type Includeable,
 	type Model,
 	type ModelStatic,
@@ -113,7 +112,7 @@ export abstract class BaseController<Type extends Model> {
 	protected initializeAdditionalRoutes(): void {}
 
 	protected async getByPrimaryKey(request: Request, response: Response) {
-		const userId = request.validatedSession?.userId;
+		const userId: number | undefined = request.validatedSession?.userId;
 		if (!userId && !this.options.allowAnonymousGet) {
 			const error: HttpStatus = {
 				code: 403,
@@ -121,7 +120,7 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const primaryKey = Number(request.params.id ?? 0);
+		const primaryKey: number = Number(request.params.id ?? 0);
 		if (primaryKey < 1) {
 			const error: HttpStatus = {
 				code: 400,
@@ -129,12 +128,12 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const attributes = request.query.attributes
+		const attributes: string[] = request.query.attributes
 			? Array.isArray(request.query.attributes)
 				? (request.query.attributes as string[])
 				: [request.query.attributes as string]
 			: [];
-		const instance = await this.model.findByPk(
+		const instance: Type | null = await this.model.findByPk(
 			primaryKey,
 			this.getFindOptions(attributes),
 		);
@@ -145,12 +144,12 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const validatedInstance = await this.validateGet(instance, userId);
+		const validatedInstance: Type = await this.validateGet(instance, userId);
 		response.status(200).send(validatedInstance);
 	}
 
 	private async get(request: Request, response: Response) {
-		const userId = request.validatedSession?.userId;
+		const userId: number | undefined = request.validatedSession?.userId;
 		if (!userId && !this.options.allowAnonymousGet) {
 			const error: HttpStatus = {
 				code: 403,
@@ -158,9 +157,9 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const minimumPageSize = 1;
-		const maximumPageSize = 100;
-		const pageSize = Number(request.query.pageSize ?? maximumPageSize);
+		const minimumPageSize: number = 1;
+		const maximumPageSize: number = 100;
+		const pageSize: number = Number(request.query.pageSize ?? maximumPageSize);
 		if (pageSize < minimumPageSize) {
 			const error: HttpStatus = {
 				code: 400,
@@ -175,7 +174,7 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const firstPage = 1;
+		const firstPage: number = 1;
 		const pageNumber = Number(request.query.pageNumber ?? firstPage);
 		if (pageNumber < firstPage) {
 			const error: HttpStatus = {
@@ -184,21 +183,21 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const attributes = request.query.attributes
+		const attributes: string[] = request.query.attributes
 			? Array.isArray(request.query.attributes)
 				? (request.query.attributes as string[])
 				: [request.query.attributes as string]
 			: [];
-		const where = request.query.where
+		const where: WhereOptions<Attributes<Type>> | undefined = request.query.where
 			? this.buildWhereOptions(
 					decodeURIComponent(String(request.query.where)),
 				)
 			: undefined;
-		const orderDirection =
+		const orderDirection: `DESC` | `ASC` =
 			String(request.query.orderDirection).toUpperCase() === `DESC`
 				? `DESC`
 				: `ASC`;
-		const orderBy = request.query.orderBy
+		const orderBy: string = request.query.orderBy
 			? String(request.query.orderBy)
 			: this.model.primaryKeyAttribute;
 		this.validateAttribute(this.model, orderBy);
@@ -209,7 +208,7 @@ export abstract class BaseController<Type extends Model> {
 			order: [[orderBy, orderDirection]],
 			where,
 		});
-		const validatedInstances = await Promise.all(
+		const validatedInstances: Type[] = await Promise.all(
 			rows.map((instance) => this.validateGet(instance, userId)),
 		);
 		response.status(200).send({
@@ -219,7 +218,7 @@ export abstract class BaseController<Type extends Model> {
 	}
 
 	private async create(request: Request, response: Response) {
-		const userId = request.validatedSession?.userId;
+		const userId: number | undefined = request.validatedSession?.userId;
 		if (!userId && !this.options.allowAnonymousCreate) {
 			const error: HttpStatus = {
 				code: 403,
@@ -227,7 +226,7 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const rawInstance = request.body;
+		const rawInstance: Partial<Type> = request.body;
 		if (!rawInstance) {
 			const error: HttpStatus = {
 				code: 400,
@@ -235,16 +234,18 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const instance = this.sanitizeInstance(rawInstance);
-		const validatedInstance = await this.validateCreate(instance, userId);
-		const createdInstance = await this.model.create(
+		const validatedInstance: Partial<Type> = await this.validateCreate(
+			rawInstance,
+			userId,
+		);
+		const createdInstance: Type = await this.model.create(
 			validatedInstance as any,
 		);
 		response.status(201).send(createdInstance);
 	}
 
 	private async edit(request: Request, response: Response) {
-		const userId = request.validatedSession?.userId;
+		const userId: number | undefined = request.validatedSession?.userId;
 		if (!userId && !this.options.allowAnonymousEdit) {
 			const error: HttpStatus = {
 				code: 403,
@@ -252,8 +253,8 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const rawInstance = request.body;
-		if (!rawInstance) {
+		const instance: Partial<Type> = request.body;
+		if (!instance) {
 			const error: HttpStatus = {
 				code: 400,
 				message: `Missing ${this.titleCasedTypeName}.`,
@@ -261,7 +262,7 @@ export abstract class BaseController<Type extends Model> {
 			throw error;
 		}
 		const primaryKeyValue: number | undefined =
-			rawInstance[this.model.primaryKeyAttribute];
+			(instance as any)[this.model.primaryKeyAttribute];
 		if (!primaryKeyValue) {
 			const error: HttpStatus = {
 				code: 400,
@@ -276,7 +277,7 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const existingInstance = await this.model.findByPk(primaryKeyValue);
+		const existingInstance: Type | null = await this.model.findByPk(primaryKeyValue);
 		if (!existingInstance) {
 			const error: HttpStatus = {
 				code: 404,
@@ -285,17 +286,18 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const validatedInstance = await this.validateEdit(
+		const validatedInstance: Partial<Type> = await this.validateEdit(
 			existingInstance,
-			this.sanitizeInstance(rawInstance),
+			instance,
 			userId,
 		);
-		await existingInstance.update(validatedInstance);
-		response.status(200).send(existingInstance);
+		const updatedInstance: Type =
+			await existingInstance.update(validatedInstance);
+		response.status(200).send(updatedInstance);
 	}
 
 	private async delete(request: Request, response: Response) {
-		const userId = request.validatedSession?.userId;
+		const userId: number | undefined = request.validatedSession?.userId;
 		if (!userId && !this.options.allowAnonymousDelete) {
 			const error: HttpStatus = {
 				code: 403,
@@ -303,7 +305,7 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const instanceId = Number(request.params.id);
+		const instanceId: number = Number(request.params.id);
 		if (instanceId < 1) {
 			const error: HttpStatus = {
 				code: 400,
@@ -311,7 +313,7 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const instance = await this.model.findByPk(instanceId);
+		const instance: Type | null = await this.model.findByPk(instanceId);
 		if (!instance) {
 			const error: HttpStatus = {
 				code: 404,
@@ -319,49 +321,9 @@ export abstract class BaseController<Type extends Model> {
 			};
 			throw error;
 		}
-		const validatedInstance = await this.validateDelete(instance, userId);
+		const validatedInstance: Type = await this.validateDelete(instance, userId);
 		await validatedInstance.destroy();
 		response.status(200).send();
-	}
-
-	private sanitizeInstance(rawInstance: any): Partial<Type> {
-		if (!rawInstance || typeof rawInstance !== `object`) {
-			return rawInstance;
-		}
-		const sanitized: any = { ...rawInstance };
-		const modelAttributes = this.model.getAttributes();
-		for (const [key, attribute] of Object.entries(modelAttributes)) {
-			if (!(key in sanitized) || sanitized[key] === null) {
-				continue;
-			}
-			const value = sanitized[key];
-			const dataType = attribute.type;
-			if (dataType instanceof DataTypes.INTEGER || 
-				dataType instanceof DataTypes.BIGINT ||
-				dataType instanceof DataTypes.FLOAT ||
-				dataType instanceof DataTypes.DOUBLE ||
-				dataType instanceof DataTypes.DECIMAL) {
-				const num = Number(value);
-				if (!isNaN(num)) {
-					sanitized[key] = num;
-				}
-			} else if (dataType instanceof DataTypes.BOOLEAN) {
-				if (typeof value === `string`) {
-					sanitized[key] = value === `true` || value === `1`;
-				} else {
-					sanitized[key] = Boolean(value);
-				}
-			} else if (dataType instanceof DataTypes.DATE || 
-					dataType instanceof DataTypes.DATEONLY) {
-				if (typeof value === `string`) {
-					const date = new Date(value);
-					if (!isNaN(date.getTime())) {
-						sanitized[key] = date;
-					}
-				}
-			}
-		}
-		return sanitized as Partial<Type>;
 	}
 
 	private wrapMethodsWithAsyncErrorHandlers() {

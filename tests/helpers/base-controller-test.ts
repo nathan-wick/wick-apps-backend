@@ -520,29 +520,26 @@ export abstract class BaseControllerTest<Type extends Model> {
 					}
 				});
 				it(`should update all attributes when none are given`, async () => {
-					const updatedInstance = await this.getUpdatedTestInstance();
+					const { updatedInstance } =
+						await this.getUpdatedTestInstance();
 					const response = await request(this.application.express)
 						.put(`/${this.controller.kebabCasedTypeName}`)
 						.send(updatedInstance)
 						.set(this.testUserSessionTokenHeader);
 					expect(response.status).toBe(200);
-					Object.keys(this.jsonDeepClone(updatedInstance)).forEach(
-						(key) => {
-							expect(response.body).toHaveProperty(key);
-						},
+					const allAttributes = Object.keys(
+						this.controller.model.getAttributes(),
 					);
-				});
-				it(`should update only the given attributes`, async () => {
-					const updatedInstance = await this.getUpdatedTestInstance();
-					const attributes = this.getRandomDirectAttributes();
-					const response = await request(this.application.express)
-						.put(`/${this.controller.kebabCasedTypeName}`)
-						.query({ attributes })
-						.send(updatedInstance)
-						.set(this.testUserSessionTokenHeader);
-					expect(response.status).toBe(200);
-					attributes.forEach((attribute) => {
+					const serializedExpected =
+						this.jsonDeepClone(updatedInstance);
+					allAttributes.forEach((attribute) => {
 						expect(response.body).toHaveProperty(attribute);
+						if (attribute === `createdAt` || attribute === `updatedAt`) {
+							return;
+						}
+						expect(response.body[attribute]).toEqual(
+							serializedExpected[attribute],
+						);
 					});
 				});
 			} else {
@@ -635,16 +632,22 @@ export abstract class BaseControllerTest<Type extends Model> {
 		];
 	}
 
-	public async getUpdatedTestInstance(): Promise<
-		MakeNullishOptional<Type[`_creationAttributes`]>
-	> {
-		const originalInstance = this.getRandomTestInstance();
-		const updatedInstance = await DatabaseHelper.createMinimalTestInstance(
+	public async getUpdatedTestInstance(): Promise<{
+		originalInstance: Type;
+		updatedInstance: MakeNullishOptional<Type[`_creationAttributes`]>;
+	}> {
+		const originalInstance: Type = this.getRandomTestInstance();
+		const updatedInstance: MakeNullishOptional<
+			Type[`_creationAttributes`]
+		> = await DatabaseHelper.createMinimalTestInstance(
 			this.controller.model,
 		);
-		const primaryKey = this.controller.model.primaryKeyAttribute;
+		const primaryKey: string = this.controller.model.primaryKeyAttribute;
 		(updatedInstance as any)[primaryKey] = originalInstance.get(primaryKey);
-		return updatedInstance;
+		return {
+			originalInstance,
+			updatedInstance,
+		};
 	}
 
 	public getRandomDirectAttributes(
