@@ -16,13 +16,13 @@ export interface RateLimiterOptions {
 
 export const defaultRateLimiterOptions: RateLimiterOptions = {
 	autoScaleLimits: true,
-	blockDurationInMinutes: 100,
-	burstThreshold: 5,
-	cleanupIntervalInMinutes: 5,
+	blockDurationInMinutes: 10,
+	burstThreshold: 10,
+	cleanupIntervalInMinutes: 10,
 	enableTosProtection: true,
-	maxRequestsPerHour: 1000,
-	maxRequestsPerMinute: 100,
-	maxRequestsPerSecond: 10,
+	maxRequestsPerHour: 10000,
+	maxRequestsPerMinute: 1000,
+	maxRequestsPerSecond: 100,
 	responseStatusCode: 429,
 };
 

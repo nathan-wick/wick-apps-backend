@@ -5,19 +5,20 @@ import { parse } from 'useragent';
 
 export class Shield {
 	public static generateRandomCode(
-		minimumLength: number = 4,
-		maximumLength: number = 7,
+		minimumLength: number = 3,
+		maximumLength: number = 5,
 	) {
 		const length = this.generateRandomWholeNumber(
 			minimumLength,
 			maximumLength,
 		);
-		const randomNumber = Math.floor(
-			Math.random() * Number.MAX_SAFE_INTEGER,
-		);
-		const max = 10 ** length;
-		const code = randomNumber % max;
-		return code.toString().padStart(length, `0`);
+		const digits = `123456789`;
+		let code = ``;
+		for (let index = 0; index < length; index++) {
+			const digitIndex = randomInt(0, digits.length);
+			code += digits[digitIndex];
+		}
+		return code;
 	}
 
 	public static generateRandomKey(length: number = 256) {
