@@ -1,7 +1,7 @@
-export type dateFormat = `YYYY/MM/DD` | `MM/DD/YYYY` | `DD/MM/YYYY`;
+export type dateFormat = `yearMonthDay` | `monthDayYear` | `dayMonthYear`;
 
 export const dateFormatValues: dateFormat[] = [
-	`YYYY/MM/DD`,
-	`MM/DD/YYYY`,
-	`DD/MM/YYYY`,
+	`yearMonthDay`,
+	`monthDayYear`,
+	`dayMonthYear`,
 ];

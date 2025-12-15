@@ -33,7 +33,12 @@ startApplication(sequelize, applicationPort, []);
 
 Prerequisites:
 
-1. If you haven't already, log into npm by running: `npm login`
+1. Sign into [npmjs.com](https://www.npmjs.com/), create a Granular Access Token, and configure it as follows:
+    - Packages: wick-apps-backend
+    - Permissions: Read and Write
+    - Allow publishing
+    - Bypass two-factor authentication
+2. Create an `.npmrc` file at the project's root containing: `//registry.npmjs.org/:_authToken=NEW_TOKEN_HERE`
 
 Release process:
 

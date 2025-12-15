@@ -30,7 +30,7 @@ export const initializePreferencesModel = (sequelize: Sequelize) => {
 			},
 			dateFormat: {
 				allowNull: false,
-				defaultValue: `YYYY/MM/DD`,
+				defaultValue: `yearMonthDay`,
 				type: DataTypes.ENUM(...dateFormatValues),
 			},
 			primaryColor: {

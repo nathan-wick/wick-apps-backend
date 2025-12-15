@@ -64,7 +64,7 @@ export const initializeUserModel = (sequelize: Sequelize) => {
 				afterCreate: async (user: UserModel) => {
 					await PreferencesModel.create({
 						brightness: `system`,
-						dateFormat: `YYYY/MM/DD`,
+						dateFormat: `yearMonthDay`,
 						primaryColor: `default`,
 						userId: user.id,
 					});
